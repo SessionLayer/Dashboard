@@ -1,0 +1,47 @@
+/* Incident-response screens — tab strip + compact inline row actions. */
+
+.ir-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.ir-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.85rem;
+}
+
+.ir-tab:hover {
+  color: var(--text);
+}
+
+.ir-tab[aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.ir-row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ir-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-subhead {
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem;
+}

@@ -1,0 +1,48 @@
+/* Operator-settings feature styles. Composes with the foundation design tokens
+   (--surface/--border/--text/--muted/--accent…). */
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 46rem;
+}
+
+.settings-section-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.25rem 0 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section-note {
+  margin: 0;
+  font-size: 13px;
+}
+
+.settings-detail-note {
+  margin: 0.25rem 0 0;
+  font-size: 12.5px;
+}
+
+/* A consequence the operator has to read before acting on it — an unprovisioned
+   key that is refusing every session, or the cost of a rotation. Loud enough to
+   stop a skim, not styled as a failure that already happened. */
+.settings-alarm {
+  border: 1px solid var(--warn-border);
+  border-left: 3px solid var(--warn);
+  border-radius: 8px;
+  background: var(--warn-bg);
+  padding: 0.75rem 1rem;
+  margin: 0 0 0.75rem;
+  font-size: 13.5px;
+  max-width: 46rem;
+}
+
+.settings-key {
+  margin-top: 2rem;
+}

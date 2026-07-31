@@ -1,0 +1,113 @@
+# Supply-chain release pipeline: SBOM + SLSA provenance + keyless Sigstore
+# signature + a reproducibility gate for the dist bundle. Separate from `ci.yml`
+# (the required `gate` check) — this runs only on a `v*` tag push. Actions are
+# SHA-pinned; the trailing comment records the human tag.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # gh release create/upload
+      id-token: write # keyless cosign + provenance via ambient GitHub OIDC
+      attestations: write # actions/attest-build-provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve artifact names and reproducible epoch
+        run: |
+          VER=${GITHUB_REF_NAME#v}
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+          echo "TARBALL=dashboard-${VER}-dist.tgz" >> "$GITHUB_ENV"
+          echo "SBOM=dashboard-${VER}-sbom.cdx.json" >> "$GITHUB_ENV"
+
+      - name: Build and package dist
+        run: |
+          npm run build
+          ./.github/scripts/pack-dist.sh "$TARBALL"
+
+      # Rebuild in a clean tree and assert an identical tarball digest.
+      - name: Reproducibility gate
+        run: |
+          sha256sum "$TARBALL" | awk '{print $1}' > first.sha256
+          rm -rf dist "$TARBALL"
+          npm run build
+          ./.github/scripts/pack-dist.sh "$TARBALL"
+          sha256sum "$TARBALL" | awk '{print $1}' > second.sha256
+          if ! diff -q first.sha256 second.sha256 >/dev/null; then
+            echo "::error::dist tarball is not reproducible ($(cat first.sha256) != $(cat second.sha256))"
+            exit 1
+          fi
+          echo "reproducible sha256: $(cat first.sha256)"
+
+      # CycloneDX 1.6 JSON. --output-reproducible drops metadata.timestamp
+      # and serialNumber so the SBOM itself is byte-stable.
+      - name: Generate SBOM
+        run: |
+          npm run sbom
+          cp sbom.cdx.json "$SBOM"
+          jq -e '.bomFormat=="CycloneDX" and .specVersion=="1.6" and (.components|length>0)' "$SBOM" >/dev/null
+
+      # SLSA v1 provenance over the tarball + SBOM (Rekor-logged bundle).
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            ${{ env.TARBALL }}
+            ${{ env.SBOM }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # Keyless blob signature over the tarball + SBOM. No key at rest; the
+      # signing identity is this workflow's GitHub OIDC (Fulcio-issued short-lived
+      # cert). Current cosign defaults to the new bundle format, which folds the
+      # signature + certificate into the bundle and silently ignores
+      # --output-signature/--output-certificate (warns, doesn't fail) — those
+      # per-file outputs never actually exist, so a "Publish release" step that
+      # globs for a standalone .sig file will not find one. The bundle is the
+      # one artifact this actually produces; verify against it (see
+      # docs/security/supply-chain.md).
+      - name: Sign artifact and SBOM
+        env:
+          COSIGN_YES: 'true'
+        run: |
+          for f in "$TARBALL" "$SBOM"; do
+            cosign sign-blob --yes --bundle "${f}.sigstore.json" "$f"
+          done
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+          gh release upload "$TAG" \
+            "$TARBALL" "${TARBALL}.sigstore.json" \
+            "$SBOM" "${SBOM}.sigstore.json" \
+            "${{ steps.attest.outputs.bundle-path }}" \
+            --clobber
