@@ -1,0 +1,46 @@
+name: CI
+
+# Contract-first delivery gate for the Control Plane Dashboard. The single job id
+# `gate` is the branch-protection required check — do not rename it or add a
+# matrix, or auto-merge will hang waiting for a check that never reports.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref so a hung/old build does not sit in the
+# queue or run to the default timeout.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to full commit SHAs (supply-chain hardening); the
+      # trailing comment records the human-readable tag.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Drift check against the pinned SessionLayer/Contracts tag. Git-only;
+      # needs no npm ci.
+      - name: Contract drift check (contracts.lock)
+        run: npm run vendor-contracts:check
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Gate (lint, build, unit, e2e, audit, contract drift)
+        run: ./scripts/gate.sh

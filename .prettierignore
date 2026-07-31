@@ -1,0 +1,12 @@
+# Generated / vendored — never reformat.
+src/api/schema.d.ts
+openapi/openapi.yaml
+package-lock.json
+
+# Build & test artifacts
+dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+node_modules/

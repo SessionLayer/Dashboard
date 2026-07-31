@@ -1,0 +1,17 @@
+# Static-host security headers (Netlify / Cloudflare Pages `_headers` format).
+# Place at the site root of the built `dist/`. These hosts cannot template from
+# env at request time, so the deploy pipeline MUST substitute the REPLACE-*
+# connect-src origins (CP API, OIDC token endpoint, recording object store) before
+# publishing. See README.md; the header set mirrors nginx security-headers.conf.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' REPLACE-CP-ORIGIN REPLACE-OIDC-ORIGIN REPLACE-OBJECT-STORE-ORIGIN; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'; worker-src 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# Content-hashed assets are safe to cache immutably (Vite fingerprints them).
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
