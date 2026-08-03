@@ -42,13 +42,13 @@ const CA_KIND_OPTIONS: readonly { value: CaKind; label: string }[] = [
 
 const CA_BACKEND_OPTIONS: readonly { value: CaBackend; label: string }[] = [
   { value: 'local', label: 'local' },
-  { value: 'aws_kms', label: 'aws_kms — no signer in this build' },
+  { value: 'aws_kms', label: 'aws_kms' },
   { value: 'azure_keyvault', label: 'azure_keyvault' },
   { value: 'vault', label: 'vault — no signer in this build' },
 ];
 
 const BACKEND_HINT =
-  'Only local and azure_keyvault have a signer in this build; aws_kms and vault are integration seams with no implementation of their own — picking one is accepted here but rejected by the server (422). All four stay listed because an existing CA, carried from an older deployment, may already be configured with one.';
+  'local, aws_kms and azure_keyvault have a signer; vault is an integration seam with no implementation of its own — picking it is accepted here but rejected by the server (422). A key service also has to be configured on the Control Plane, which this screen cannot see, so a backend offered here can still come back 422. All four stay listed because an existing CA, carried from an older deployment, may already be configured with one.';
 
 /**
  * Shape-only check for a Key Vault key identifier
@@ -81,18 +81,46 @@ function looksLikeVersionedKeyVaultReference(ref: string): boolean {
   return name !== '.' && name !== '..' && version !== '.' && version !== '..';
 }
 
+/**
+ * Shape-only check for a KMS key ARN
+ * (`arn:<partition>:kms:<region>:<account>:key/<key-id>`). An alias ARN has the
+ * right shape and the wrong meaning, so it is called out by name rather than
+ * left to fail the generic pattern: `kms:UpdateAlias` repoints an alias with
+ * nothing visible to the Control Plane, which would swap the signing key under a
+ * CA whose public half every node already trusts. The Control Plane is still the
+ * authority — it also pins the ARN to the region and account it is configured
+ * for, which this UI has no way to know.
+ */
+function looksLikeKmsKeyArn(ref: string): boolean {
+  return /^arn:[a-z0-9-]+:kms:[a-z0-9-]+:\d{12}:key\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})$/.test(
+    ref,
+  );
+}
+
 /** Client-side hint only; the server's own `422` message is what's authoritative. */
-function azureKeyReferenceError(
+function keyReferenceError(
   backend: CaBackend,
   keyReference: string,
 ): string | undefined {
-  if (backend !== 'azure_keyvault') return undefined;
   const trimmed = keyReference.trim();
-  if (trimmed === '') {
-    return 'Required for azure_keyvault: a versioned Key Vault key identifier.';
+  if (backend === 'azure_keyvault') {
+    if (trimmed === '') {
+      return 'Required for azure_keyvault: a versioned Key Vault key identifier.';
+    }
+    if (!looksLikeVersionedKeyVaultReference(trimmed)) {
+      return 'Must be a versioned Key Vault key identifier: https://<vault>/keys/<name>/<version>.';
+    }
   }
-  if (!looksLikeVersionedKeyVaultReference(trimmed)) {
-    return 'Must be a versioned Key Vault key identifier: https://<vault>/keys/<name>/<version>.';
+  if (backend === 'aws_kms') {
+    if (trimmed === '') {
+      return 'Required for aws_kms: a KMS key ARN.';
+    }
+    if (trimmed.includes(':alias/')) {
+      return 'An alias ARN is refused — an alias can be repointed at another key without the Control Plane seeing it. Name the key ARN: arn:aws:kms:<region>:<account>:key/<key-id>.';
+    }
+    if (!looksLikeKmsKeyArn(trimmed)) {
+      return 'Must be a KMS key ARN: arn:aws:kms:<region>:<account>:key/<key-id>.';
+    }
   }
   return undefined;
 }
@@ -151,7 +179,7 @@ function CaForm({
   );
 
   const pending = create.isPending || update.isPending;
-  const keyReferenceError = azureKeyReferenceError(backend, keyReference);
+  const keyReferenceProblem = keyReferenceError(backend, keyReference);
 
   const submit = () => {
     if (existing) {
@@ -201,7 +229,7 @@ function CaForm({
         value={keyReference}
         onChange={setKeyReference}
         required
-        error={keyReferenceError}
+        error={keyReferenceProblem}
         hint="A backend key handle/reference only — never private key material."
       />
       <SelectField
@@ -220,7 +248,7 @@ function CaForm({
         <Button
           variant="primary"
           onClick={submit}
-          disabled={pending || keyReferenceError !== undefined}
+          disabled={pending || keyReferenceProblem !== undefined}
         >
           {pending ? 'Saving…' : existing ? 'Save changes' : 'Create CA'}
         </Button>
@@ -272,17 +300,18 @@ function RotateCaBody({
   const [keyReference, setKeyReference] = useState('');
 
   // What this rotation will actually run in, whether kept or overridden — this
-  // is what decides whether azure_keyvault's key-reference rule applies, not
-  // the raw dropdown value.
+  // is what decides which backend's key-reference rule applies, not the raw
+  // dropdown value.
   const resolvedBackend = backend === '' ? row.backend : backend;
-  const keyReferenceError = azureKeyReferenceError(
-    resolvedBackend,
-    keyReference,
-  );
+  const keyReferenceProblem = keyReferenceError(resolvedBackend, keyReference);
+  const keyServiceBackend =
+    resolvedBackend === 'azure_keyvault' || resolvedBackend === 'aws_kms';
   const keyReferenceHint =
     resolvedBackend === 'azure_keyvault'
       ? 'Required for azure_keyvault: the versioned key the operator provisioned in the vault, e.g. https://<vault>.vault.azure.net/keys/<name>/<version>.'
-      : 'Optional backend-provisioned handle; never private material.';
+      : resolvedBackend === 'aws_kms'
+        ? 'Required for aws_kms: the ARN of the key the operator created in KMS, e.g. arn:aws:kms:us-east-1:123456789012:key/<key-id>.'
+        : 'Optional backend-provisioned handle; never private material.';
 
   const confirm = () => {
     rotate.mutate(
@@ -310,7 +339,7 @@ function RotateCaBody({
           <Button
             variant="primary"
             onClick={confirm}
-            disabled={rotate.isPending || keyReferenceError !== undefined}
+            disabled={rotate.isPending || keyReferenceProblem !== undefined}
           >
             {rotate.isPending ? 'Working…' : 'Rotate'}
           </Button>
@@ -330,8 +359,8 @@ function RotateCaBody({
           ...CA_BACKEND_OPTIONS,
         ]}
         hint={
-          resolvedBackend === 'azure_keyvault' && backend !== ''
-            ? `${BACKEND_HINT} Overriding this is how a CA is adopted onto azure_keyvault — the previous key stays trusted as outgoing during the overlap window.`
+          keyServiceBackend && backend !== ''
+            ? `${BACKEND_HINT} Overriding this is how a CA is adopted onto ${resolvedBackend} — the previous key stays trusted as outgoing during the overlap window.`
             : BACKEND_HINT
         }
       />
@@ -349,8 +378,8 @@ function RotateCaBody({
         label="Incoming key reference"
         value={keyReference}
         onChange={setKeyReference}
-        required={resolvedBackend === 'azure_keyvault'}
-        error={keyReferenceError}
+        required={keyServiceBackend}
+        error={keyReferenceProblem}
         hint={keyReferenceHint}
       />
       {rotate.error !== null && <ProblemAlert error={rotate.error} />}
