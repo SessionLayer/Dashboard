@@ -12,8 +12,11 @@ const ca = (over: Partial<CaResource> = {}): CaResource => ({
   id: '44444444-4444-4444-4444-444444444444',
   name: 'user-ca',
   caKind: 'user',
-  backend: 'aws_kms',
-  keyReference: 'arn:aws:kms:key/abc',
+  // What cold start provisions, and the only backend whose key reference carries
+  // no rule — so a test about something other than key references is not
+  // silently also a test of one.
+  backend: 'local',
+  keyReference: 'local-user-ca',
   algorithm: 'ecdsa-p256',
   rotationState: 'active',
   origin: 'default',
@@ -100,7 +103,7 @@ describe('CasScreen', () => {
   // Unlike algorithm, a backend with no signer is NOT dropped from the list —
   // an upgraded deployment may already have a CA row configured with one, and
   // it must stay selectable/displayable. It is annotated instead.
-  it('keeps all four backends listed, annotating the two with no signer', async () => {
+  it('keeps all four backends listed, annotating the one with no signer', async () => {
     server.use(http.get(cp('/v1/cas'), () => page([ca()])));
     renderWithProviders(<CasScreen />, {
       authenticated: true,
