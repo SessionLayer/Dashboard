@@ -973,11 +973,10 @@ export interface paths {
          *     audited.
          *
          *     The incoming key is provisioned in the active CA's backend unless the body
-         *     overrides `backend`, which is how a CA is **adopted onto a key service**: for
-         *     `azure_keyvault` the key is created by the operator in the vault beforehand
-         *     and named here by its versioned identifier, and the Control Plane reads only
-         *     its public half. Nothing about the private key crosses this API in either
-         *     direction.
+         *     overrides `backend`, which is how a CA is **adopted onto a key service**: the
+         *     operator creates the key in the vault or in KMS beforehand and names it here
+         *     by its pinned identifier, and the Control Plane reads only its public half.
+         *     Nothing about the private key crosses this API in either direction.
          */
         post: operations["rotateCa"];
         delete?: never;
@@ -2846,7 +2845,7 @@ export interface components {
         CaKind: "user" | "session" | "host";
         /**
          * CA Backend
-         * @description Where a CA's private key lives. Two of these can actually sign:
+         * @description Where a CA's private key lives. Three of these can actually sign:
          *
          *     - `local` — the key is in the Control Plane's database, encrypted under an
          *       operator KEK. Always available.
@@ -2854,11 +2853,14 @@ export interface components {
          *       Control Plane signs by calling the vault, and the deployment must have
          *       `sessionlayer.ca.azure.*` configured; a CA naming this backend on a
          *       Control Plane that does not fails closed rather than signing locally.
+         *     - `aws_kms` — the key is in AWS KMS and never leaves it. The Control Plane
+         *       signs by calling `Sign` on a pinned key ARN, and the deployment must have
+         *       `sessionlayer.ca.aws.*` configured; the same fail-closed rule applies.
          *
-         *     `aws_kms` and `vault` are **integration seams with no implementation**: the
-         *     interfaces exist for a deployment to bind, but this build cannot produce a
-         *     signer for either, so a CA naming one would accept the write and then fail
-         *     every signature. Creating or updating a CA onto them is rejected (`422`).
+         *     `vault` is an **integration seam with no implementation**: the interface
+         *     exists for a deployment to bind, but this build cannot produce a signer for
+         *     it, so a CA naming it would accept the write and then fail every signature.
+         *     Creating or updating a CA onto it is rejected (`422`).
          *
          *     The set is deliberately never narrowed — a row an upgraded deployment
          *     already holds must stay readable.
@@ -3115,7 +3117,8 @@ export interface components {
              *     kind pointing at a key nothing can sign with.
              *
              *     When this is `azure_keyvault`, `keyReference` is required and must be a
-             *     fully **versioned** Key Vault key identifier.
+             *     fully **versioned** Key Vault key identifier. When it is `aws_kms`,
+             *     `keyReference` is required and must be a KMS **key ARN**.
              */
             backend?: components["schemas"]["CaBackend"];
             /**
@@ -3128,6 +3131,12 @@ export interface components {
              *     trusted-CA set, so a vault-side rotation that floated the signing key
              *     underneath a running CA would have the Control Plane emitting
              *     certificates no node trusts, with no error on the Control Plane side.
+             *
+             *     For `aws_kms` this is the key ARN
+             *     `arn:aws:kms:<region>:<account>:key/<key-id>`. An **alias** ARN is
+             *     refused for the same reason: `kms:UpdateAlias` repoints an alias without
+             *     changing anything the Control Plane can see, which swaps the signing key
+             *     underneath a CA whose old public half is already distributed.
              */
             keyReference?: string;
         };
