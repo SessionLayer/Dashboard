@@ -359,8 +359,9 @@ describe('CasScreen', () => {
 
   it('rotates onto aws_kms with a key ARN', async () => {
     let body: Record<string, unknown> | undefined;
-    const arn = 'arn:aws:kms:us-east-1:123456789012:key/'
-      + '5831a034-6a75-444e-8fd4-f1b57f27b4b9';
+    const arn =
+      'arn:aws:kms:us-east-1:123456789012:key/' +
+      '5831a034-6a75-444e-8fd4-f1b57f27b4b9';
     server.use(
       http.get(cp('/v1/cas'), () => page([ca()])),
       http.post(cp('/v1/cas/:caId/rotate'), async ({ request }) => {
