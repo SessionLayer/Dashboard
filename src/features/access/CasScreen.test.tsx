@@ -12,8 +12,11 @@ const ca = (over: Partial<CaResource> = {}): CaResource => ({
   id: '44444444-4444-4444-4444-444444444444',
   name: 'user-ca',
   caKind: 'user',
-  backend: 'aws_kms',
-  keyReference: 'arn:aws:kms:key/abc',
+  // What cold start provisions, and the only backend whose key reference carries
+  // no rule — so a test about something other than key references is not
+  // silently also a test of one.
+  backend: 'local',
+  keyReference: 'local-user-ca',
   algorithm: 'ecdsa-p256',
   rotationState: 'active',
   origin: 'default',
@@ -100,7 +103,7 @@ describe('CasScreen', () => {
   // Unlike algorithm, a backend with no signer is NOT dropped from the list —
   // an upgraded deployment may already have a CA row configured with one, and
   // it must stay selectable/displayable. It is annotated instead.
-  it('keeps all four backends listed, annotating the two with no signer', async () => {
+  it('keeps all four backends listed, annotating the one with no signer', async () => {
     server.use(http.get(cp('/v1/cas'), () => page([ca()])));
     renderWithProviders(<CasScreen />, {
       authenticated: true,
@@ -115,7 +118,7 @@ describe('CasScreen', () => {
     ).map((o) => o.textContent);
     expect(labels).toEqual([
       'local',
-      'aws_kms — no signer in this build',
+      'aws_kms',
       'azure_keyvault',
       'vault — no signer in this build',
     ]);
@@ -351,6 +354,76 @@ describe('CasScreen', () => {
     expect(rotateButton).toBeDisabled();
     expect(
       within(dialog).getByText(/versioned Key Vault key identifier/),
+    ).toBeInTheDocument();
+  });
+
+  it('rotates onto aws_kms with a key ARN', async () => {
+    let body: Record<string, unknown> | undefined;
+    const arn =
+      'arn:aws:kms:us-east-1:123456789012:key/' +
+      '5831a034-6a75-444e-8fd4-f1b57f27b4b9';
+    server.use(
+      http.get(cp('/v1/cas'), () => page([ca()])),
+      http.post(cp('/v1/cas/:caId/rotate'), async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(ca());
+      }),
+    );
+    renderWithProviders(<CasScreen />, {
+      authenticated: true,
+      permissions: [...MANAGE],
+    });
+    await screen.findByText('user-ca');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(
+      within(dialog).getByRole('combobox', { name: 'Backend' }),
+      { target: { value: 'aws_kms' } },
+    );
+    fireEvent.change(
+      within(dialog).getByRole('textbox', {
+        name: 'Incoming key reference',
+      }),
+      { target: { value: arn } },
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rotate' }));
+    await waitFor(() => {
+      expect(body?.backend).toBe('aws_kms');
+    });
+    expect(body?.keyReference).toBe(arn);
+  });
+
+  it('refuses a KMS alias ARN by name, not as a generic shape error', async () => {
+    server.use(http.get(cp('/v1/cas'), () => page([ca()])));
+    renderWithProviders(<CasScreen />, {
+      authenticated: true,
+      permissions: [...MANAGE],
+    });
+    await screen.findByText('user-ca');
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(
+      within(dialog).getByRole('combobox', { name: 'Backend' }),
+      { target: { value: 'aws_kms' } },
+    );
+    const rotateButton = within(dialog).getByRole('button', {
+      name: 'Rotate',
+    });
+    expect(rotateButton).toBeDisabled();
+
+    fireEvent.change(
+      within(dialog).getByRole('textbox', {
+        name: 'Incoming key reference',
+      }),
+      {
+        target: {
+          value: 'arn:aws:kms:us-east-1:123456789012:alias/session-ca',
+        },
+      },
+    );
+    expect(rotateButton).toBeDisabled();
+    expect(
+      within(dialog).getByText(/alias ARN is refused/),
     ).toBeInTheDocument();
   });
 
