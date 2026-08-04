@@ -1,9 +1,9 @@
 {
   "name": "dashboard",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
-  "description": "SessionLayer Control Plane admin dashboard \u2014 a typed client of the OpenAPI contract.",
+  "description": "SessionLayer Control Plane admin dashboard — a typed client of the OpenAPI contract.",
   "license": "GPL-3.0-only",
   "packageManager": "npm@10.9.8",
   "engines": {
