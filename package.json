@@ -35,7 +35,7 @@
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "6.0.0",
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.49.0",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^26.1.1",
