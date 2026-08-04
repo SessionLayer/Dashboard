@@ -18,15 +18,16 @@ WORKDIR /app
 # cannot be repointed afterwards. Build with your own --build-arg values for a
 # real deployment.
 #
-# SL_ALLOW_UNCONFIGURED_BUILD is how this image says it meant to be built with
-# none: without it the guard refuses, because the fallback is
-# http://localhost:8080 and a bundle carrying that is one an operator cannot
-# fix. Set it here and nowhere else, so an operator building their own image
-# gets the refusal.
+# SL_ALLOW_UNCONFIGURED_BUILD is how a build says it meant to have no endpoints:
+# without it the guard refuses, because the fallback is http://localhost:8080 and
+# a bundle carrying that is one an operator cannot repoint. It is declared with
+# NO default on purpose — an ARG default applies to every build of this file,
+# including an operator's, which would disable the refusal for exactly the person
+# it is for. Our own image jobs pass it explicitly.
 ARG VITE_CP_BASE_URL
 ARG VITE_OIDC_ISSUER
 ARG VITE_OIDC_CLIENT_ID
-ARG SL_ALLOW_UNCONFIGURED_BUILD=1
+ARG SL_ALLOW_UNCONFIGURED_BUILD
 ENV VITE_CP_BASE_URL=$VITE_CP_BASE_URL \
     VITE_OIDC_ISSUER=$VITE_OIDC_ISSUER \
     VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \

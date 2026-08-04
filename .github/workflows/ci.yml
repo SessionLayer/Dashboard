@@ -73,6 +73,7 @@ jobs:
           load: true
           tags: sessionlayer/dashboard:ci
           build-args: |
+            SL_ALLOW_UNCONFIGURED_BUILD=1
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
 
@@ -86,6 +87,7 @@ jobs:
           platforms: linux/arm64
           outputs: type=cacheonly
           build-args: |
+            SL_ALLOW_UNCONFIGURED_BUILD=1
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
 
