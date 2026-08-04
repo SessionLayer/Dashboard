@@ -52,7 +52,7 @@ RUN grep -q '__CP_ORIGIN__ __OIDC_ORIGIN__ __OBJECT_STORE_ORIGIN__' deploy/secur
 # nginx-unprivileged rather than stock nginx: it runs as uid 101 with no root
 # master process, listens on 8080, and already keeps its pid and temp paths on
 # /tmp, so the only writable path the container needs is a tmpfs there.
-FROM nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6 AS serve
+FROM nginxinc/nginx-unprivileged:1.30-alpine@sha256:44e36330f74d4f3a1d4e222acca9e23b401fb87811a7597024502bb759c4dd49 AS serve
 
 ARG VERSION=0.0.0-dev
 ARG REVISION=unknown
