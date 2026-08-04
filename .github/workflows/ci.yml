@@ -169,10 +169,10 @@ jobs:
           set -euo pipefail
           helm lint "$CHART"
 
-          # Unlike the other three charts, this one renders with no operator
-          # input at all, because it holds no credential. Both the defaults and
-          # the production values are checked.
-          for values in "$CHART/values.yaml" "$CHART"/ci/*.yaml; do
+          # The two installs this chart supports: an image you built, and the
+          # published evaluation image named as such. A bare `helm install` is
+          # neither, and the refusal step below asserts it stays refused.
+          for values in "$CHART"/ci/*.yaml; do
             name=$(basename "$values" .yaml)
             echo "::group::$name"
             helm lint "$CHART" -f "$values"
@@ -194,14 +194,17 @@ jobs:
             # A template that silently stops rendering still schema-validates.
             workloads=$(grep -c '^kind: Deployment$' "$out" || true)
             [ "$workloads" = 1 ] || { echo "::error::$name rendered $workloads Deployments, expected 1"; exit 1; }
-            grep -qE '^          image: ghcr\.io/sessionlayer/dashboard[@:]' "$out" \
-              || { echo "::error::$name rendered no dashboard image reference"; exit 1; }
+            # Repository per values file, since a production install runs an
+            # image the operator built and only the evaluation one is ours.
+            repo=$(grep -E '^  repository:' "$values" | head -1 | awk '{print $2}')
+            grep -qE "^          image: ${repo}[@:]" "$out" \
+              || { echo "::error::$name rendered no image reference for $repo"; exit 1; }
             echo "::endgroup::"
           done
 
           # An unset connect-src allow-list must collapse to 'self' rather than
-          # widening, so the default render carries no SL_CSP_CONNECT_SRC at all.
-          if grep -q 'SL_CSP_CONNECT_SRC' "$RUNNER_TEMP/values.rendered.yaml"; then
+          # widening, so that render carries no SL_CSP_CONNECT_SRC at all.
+          if grep -q 'SL_CSP_CONNECT_SRC' "$RUNNER_TEMP/evaluation-values.rendered.yaml"; then
             echo "::error::the default render sets SL_CSP_CONNECT_SRC; an unset allow-list must collapse connect-src to 'self'"
             exit 1
           fi
@@ -210,7 +213,7 @@ jobs:
 
           # image.digest must win over image.tag, or pinning by digest is
           # decoration. Both are set here, and only one may survive.
-          ref=$(helm template chart-ci "$CHART" -f "$CHART"/ci/production-values.yaml \
+          ref=$(helm template chart-ci "$CHART" -f "$CHART"/ci/evaluation-values.yaml \
                   --set image.tag=v9.9.9 --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
                 | grep -m1 -oE 'image: ghcr\.io/sessionlayer/dashboard[@:][^ ]+')
           echo "$ref"
@@ -262,7 +265,21 @@ jobs:
           # A cleartext origin in connect-src would let the page make
           # credential-bearing calls a network attacker can read.
           refuse "/csp/connectSrc" \
-            helm lint "$CHART" --set 'csp.connectSrc={http://cp.example.com}'
+            helm lint "$CHART" -f "$prod" --set 'csp.connectSrc={http://cp.example.com}'
+
+          # The published image is an evaluation build: the Control Plane and
+          # identity endpoints are compiled into the bundle and that one was
+          # built with none, so it calls http://localhost:8080 and nothing at
+          # runtime repoints it. A bare `helm install` used to deploy it and say
+          # nothing.
+          refuse "which is an evaluation build" \
+            helm template chart-ci "$CHART"
+          refuse "which is an evaluation build" \
+            helm template chart-ci "$CHART" --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
+          renders "the evaluation image, named as such" \
+            helm template chart-ci "$CHART" --set image.allowUnconfiguredBuild=true
+          renders "an image the operator built" \
+            helm template chart-ci "$CHART" --set image.repository=registry.example.com/sessionlayer/dashboard
           # The budget guard, over every input path. --set yields an int64 where a
           # values file yields a float64 and a percentage yields a string, and a
           # guard written against one of those is blind to the others.

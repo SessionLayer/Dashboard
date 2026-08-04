@@ -1,3 +1,6 @@
+{{- if and (eq .Values.image.repository "ghcr.io/sessionlayer/dashboard") (not .Values.image.allowUnconfiguredBuild) }}
+{{- fail "sessionlayer-dashboard: image.repository is the published image, which is an evaluation build. Vite inlines the Control Plane and identity provider endpoints at image build time, that image was built with none, and its bundle therefore calls http://localhost:8080. No value here repoints it, so this install would serve a console that reaches nothing. Build the image with your own endpoints (deploy/Dockerfile, --build-arg VITE_CP_BASE_URL=https://cp.example.com), push it to your registry, and set image.repository to it. Set image.allowUnconfiguredBuild=true to install the published image knowingly, for an evaluation where the browser reaches the Control Plane at http://localhost:8080 through a port-forward." }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

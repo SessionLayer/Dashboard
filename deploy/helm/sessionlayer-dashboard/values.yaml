@@ -8,7 +8,14 @@
 replicaCount: 2
 
 image:
+  # The published image at this repository is an evaluation build: Vite inlines
+  # the Control Plane and identity provider endpoints when the image is built,
+  # and that one was built with none, so its bundle calls http://localhost:8080
+  # and no value here can repoint it. Rendering refuses it until you either
+  # point this at an image you built with your own endpoints, or say below that
+  # the evaluation image is what you meant.
   repository: ghcr.io/sessionlayer/dashboard
+  allowUnconfiguredBuild: false
   # Empty resolves to the chart's appVersion.
   tag: ""
   # A tag is mutable and a digest is not. Set this in production; it wins over

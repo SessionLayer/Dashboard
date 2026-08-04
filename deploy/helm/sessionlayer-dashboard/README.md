@@ -15,21 +15,48 @@ security context and NetworkPolicy conventions follow those three.
 ```bash
 helm install db deploy/helm/sessionlayer-dashboard \
   --namespace sessionlayer \
+  --set image.repository=registry.example.com/sessionlayer/dashboard \
   --set image.digest=sha256:<the digest you verified> \
   --set 'csp.connectSrc={https://cp.example.com,https://idp.example.com,https://recordings.example.com}'
 ```
 
-Replace the three origins with your Control Plane, identity provider and
-recording object store, and `<the digest you verified>` with the digest
-`cosign verify` reported for `ghcr.io/sessionlayer/dashboard`.
+Replace `registry.example.com/sessionlayer/dashboard` with the image you built
+for your deployment, the three origins with your Control Plane, identity
+provider and recording object store, and `<the digest you verified>` with the
+digest `cosign verify` reported for that image.
+
+The image is where your endpoints live, so this chart will not install the
+published one by default:
+
+```text
+Error: execution error at (sessionlayer-dashboard/templates/deployment.yaml:2:4):
+sessionlayer-dashboard: image.repository is the published image, which is an
+evaluation build. ...
+```
+
+Build your own from `deploy/Dockerfile`:
+
+```bash
+docker build -f deploy/Dockerfile . \
+  --build-arg VITE_CP_BASE_URL=https://cp.example.com \
+  --build-arg VITE_OIDC_ISSUER=https://idp.example.com \
+  --build-arg VITE_OIDC_CLIENT_ID=sessionlayer-dashboard \
+  -t registry.example.com/sessionlayer/dashboard:v0.0.2
+```
+
+To look at the published image instead, say so with
+`--set image.allowUnconfiguredBuild=true`. Its bundle calls
+`http://localhost:8080`, so it reaches a Control Plane only where the browser
+finds one there, through a `kubectl port-forward`.
 
 Point your ingress controller at the Service and terminate TLS there. The chart
 ships no Ingress: the other three SessionLayer charts ship none either, and an
 Ingress carries a TLS surface that belongs with your controller's conventions
 rather than with this chart.
 
-`ci/production-values.yaml` is a complete values file, kept as what the chart is
-linted and schema-checked against.
+`ci/production-values.yaml` and `ci/evaluation-values.yaml` are those two
+installs as complete values files, kept as what the chart is linted and
+schema-checked against.
 
 ## What is baked into the image, not set here
 
@@ -40,6 +67,12 @@ value in this chart moves them, and the image's build refuses a cleartext
 
 That has one consequence for pinning: an image tag says which Dashboard release
 it is, and nothing about which deployment it was built for. Set `image.digest`.
+
+It has a second for the published image at `ghcr.io/sessionlayer/dashboard`,
+which is built with no endpoints at all and falls back to
+`http://localhost:8080`. A digest pins those bytes exactly and does not change
+what they point at, so rendering refuses that repository until
+`image.allowUnconfiguredBuild` says the evaluation image is what you meant.
 
 ## Content-Security-Policy
 
@@ -69,7 +102,8 @@ The rest of the header set, including `script-src 'self'` with no
 
 | Key | Default | Notes |
 |---|---|---|
-| `image.repository` | `ghcr.io/sessionlayer/dashboard` | |
+| `image.repository` | `ghcr.io/sessionlayer/dashboard` | Rendering refuses this value on its own: the published image is an evaluation build wired to `http://localhost:8080`. Point it at an image you built. |
+| `image.allowUnconfiguredBuild` | `false` | Installs the published image knowingly, for an evaluation behind a port-forward. |
 | `image.tag` | `""` | Empty resolves to the chart's `appVersion`. |
 | `image.digest` | `""` | Wins over `tag`. |
 | `image.pullPolicy` | `IfNotPresent` | |
