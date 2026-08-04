@@ -14,10 +14,30 @@ function isLoopback(hostname: string): boolean {
   );
 }
 
+/** Opting out is deliberate and auditable: the published evaluation image sets it. */
+export const UNCONFIGURED_OPT_IN = 'SL_ALLOW_UNCONFIGURED_BUILD';
+
 export function httpsBaseViolations(
   env: Record<string, string | undefined>,
+  optIn: string | undefined = undefined,
 ): string[] {
   const violations: string[] = [];
+
+  // Vite inlines these at build time, and an unset VITE_CP_BASE_URL falls back
+  // to http://localhost:8080 — a loopback value, which the scheme check below
+  // exempts. So an unconfigured production build used to succeed and ship a
+  // bundle whose API base is the browser's own machine. That image cannot be
+  // repointed afterwards, so the refusal belongs here, at the only moment the
+  // endpoint can still be chosen.
+  const base = env.VITE_CP_BASE_URL?.trim();
+  if ((base === undefined || base.length === 0) && !optIn) {
+    violations.push(
+      `VITE_CP_BASE_URL is unset, so this build would inline http://localhost:8080 as the ` +
+        `Control Plane endpoint and could never be pointed anywhere else. Set it, or set ` +
+        `${UNCONFIGURED_OPT_IN}=1 if an unconfigured evaluation image is what you meant.`,
+    );
+  }
+
   for (const name of HTTPS_REQUIRED_VARS) {
     const value = env[name]?.trim();
     if (value === undefined || value.length === 0) continue;
@@ -45,8 +65,12 @@ export function assertHttpsBasesPlugin(): Plugin {
     name: 'sl-assert-https-bases',
     apply: 'build',
     config(_config, { mode }) {
+      // The opt-in is read from the process environment, not from loadEnv's
+      // VITE_ prefix: it must not be inlined into the bundle, and it must not
+      // be settable from a checked-in .env file.
       const violations = httpsBaseViolations(
         loadEnv(mode, process.cwd(), 'VITE_'),
+        process.env[UNCONFIGURED_OPT_IN],
       );
       if (violations.length > 0) {
         throw new Error(
