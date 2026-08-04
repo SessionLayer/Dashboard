@@ -202,6 +202,17 @@ jobs:
           grep -q 'SL_CSP_CONNECT_SRC' "$RUNNER_TEMP/production-values.rendered.yaml" \
             || { echo "::error::the production render does not set SL_CSP_CONNECT_SRC"; exit 1; }
 
+          # image.digest must win over image.tag, or pinning by digest is
+          # decoration. Both are set here, and only one may survive.
+          ref=$(helm template chart-ci "$CHART" -f "$CHART"/ci/production-values.yaml \
+                  --set image.tag=v9.9.9 --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+                | grep -m1 -oE 'image: ghcr\.io/sessionlayer/dashboard[@:][^ ]+')
+          echo "$ref"
+          case "$ref" in
+            *"@sha256:0000000000000000000000000000000000000000000000000000000000000000") ;;
+            *) echo "::error::image.digest did not win over image.tag: $ref"; exit 1 ;;
+          esac
+
       # The half with teeth. This chart holds no credential, so it has no secret
       # reference to demand; its controls are the values schema and the
       # structural guards, and those are what is asserted.
@@ -228,13 +239,46 @@ jobs:
             esac
           }
 
+          renders() { # renders <why> <command...>
+            local why="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1); rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then
+              echo "::error::$why should render, but was refused. A guard that says no to everything passes every refusal assertion above:"
+              printf '%s\n' "$out"
+              exit 1
+            fi
+            printf 'renders as required: %s\n' "$why"
+          }
+
           # A cleartext origin in connect-src would let the page make
           # credential-bearing calls a network attacker can read.
           refuse "/csp/connectSrc" \
             helm lint "$CHART" --set 'csp.connectSrc={http://cp.example.com}'
-          # A budget that refuses every voluntary eviction hangs a node drain.
-          refuse "not below replicaCount" \
-            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=3
+          # The budget guard, over every input path. --set yields an int64 where a
+          # values file yields a float64 and a percentage yields a string, and a
+          # guard written against one of those is blind to the others.
+          refuse "is not below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=99
+          # Kubernetes rounds a minAvailable percentage UP, so with 3 replicas
+          # the budget is already unsatisfiable at 67%, long before 100%.
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=100%'
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=67%'
+          refuse "neither a pod count nor a percentage" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=abc'
+          refuse "cannot be negative" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=-1
+
+          # The other direction. Without these, a guard that refused every value
+          # would satisfy every refusal assertion above it.
+          renders "the largest percentage that still leaves room (66% of 3)" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=66%'
+          renders "a count below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=1
 
           # values.schema.json must reject a malformed values file rather than
           # rendering something surprising.
