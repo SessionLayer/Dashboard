@@ -1,0 +1,27 @@
+{{ .Chart.Name }} {{ .Chart.Version }} installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+Image:   {{ include "sessionlayer-dashboard.image" . }}
+{{- if not .Values.image.digest }}
+         Pinned by tag. The API and identity provider the bundle talks to are
+         compiled into the image, so a tag alone does not say which deployment
+         this image belongs to. Set image.digest.
+{{- end }}
+Service: {{ include "sessionlayer-dashboard.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+
+Point your ingress controller at that Service and terminate TLS there. The
+image sends HSTS on every response, and the bundle's OIDC flow refuses a
+cleartext endpoint, so plain http reaches a login that cannot complete.
+{{ if not .Values.csp.connectSrc }}
+csp.connectSrc is empty, so connect-src is 'self' and the bundle can call
+nothing cross-origin. That is correct for a single-origin deployment where one
+reverse proxy fronts the UI, the Control Plane and the object store. Any other
+topology needs the Control Plane, identity provider and object store origins
+listed:
+
+  --set 'csp.connectSrc={https://cp.example.com,https://idp.example.com,https://recordings.example.com}'
+{{ end }}
+{{- if not .Values.networkPolicy.enabled }}
+
+NetworkPolicy is disabled, so egress from this pod is unrestricted. Serving
+static files needs none.
+{{- end }}
