@@ -3,7 +3,11 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { assertHttpsBasesPlugin, httpsBaseViolations } from './httpsGuard';
+import {
+  assertHttpsBasesPlugin,
+  httpsBaseViolations,
+  UNCONFIGURED_OPT_IN,
+} from './httpsGuard';
 
 function read(relative: string): string {
   return readFileSync(
@@ -103,14 +107,17 @@ describe('build-time https guard', () => {
     ).toHaveLength(1);
   });
 
+  // The opt-in is set so the unset-CP-endpoint rule does not also fire; each of
+  // these asserts one rule.
   it('fires on an insecure OIDC issuer AND redirect_uri (both carry secrets)', () => {
     expect(
-      httpsBaseViolations({ VITE_OIDC_ISSUER: 'http://idp.prod.example' }),
+      httpsBaseViolations({ VITE_OIDC_ISSUER: 'http://idp.prod.example' }, '1'),
     ).toHaveLength(1);
     expect(
-      httpsBaseViolations({
-        VITE_OIDC_REDIRECT_URI: 'http://app.prod.example/auth/callback',
-      }),
+      httpsBaseViolations(
+        { VITE_OIDC_REDIRECT_URI: 'http://app.prod.example/auth/callback' },
+        '1',
+      ),
     ).toHaveLength(1);
   });
 
@@ -129,15 +136,34 @@ describe('build-time https guard', () => {
     );
   });
 
-  it('exempts localhost and unset (the single-instance dev default)', () => {
+  it('exempts an explicit localhost value (the single-instance dev default)', () => {
     expect(
       httpsBaseViolations({ VITE_CP_BASE_URL: 'http://localhost:8080' }),
     ).toEqual([]);
     expect(
       httpsBaseViolations({ VITE_CP_BASE_URL: 'http://127.0.0.1:8080' }),
     ).toEqual([]);
-    expect(httpsBaseViolations({ VITE_CP_BASE_URL: '' })).toEqual([]);
-    expect(httpsBaseViolations({})).toEqual([]);
+  });
+
+  // An unset endpoint used to be exempt, which is how a production build could
+  // succeed and ship a bundle whose API base is the browser's own machine. An
+  // image built that way cannot be repointed afterwards, so the refusal has to
+  // land at build time or not at all.
+  it('refuses an unset endpoint unless the build says it meant it', () => {
+    for (const env of [{}, { VITE_CP_BASE_URL: '' }]) {
+      const violations = httpsBaseViolations(env);
+      expect(violations).toHaveLength(1);
+      expect(violations[0]).toContain('VITE_CP_BASE_URL is unset');
+      expect(violations[0]).toContain(UNCONFIGURED_OPT_IN);
+      // The opt-in is the only thing that changes the answer.
+      expect(httpsBaseViolations(env, '1')).toEqual([]);
+    }
+  });
+
+  it('still refuses a cleartext remote endpoint when the opt-in is set', () => {
+    expect(
+      httpsBaseViolations({ VITE_CP_BASE_URL: 'http://cp.prod.example' }, '1'),
+    ).toHaveLength(1);
   });
 
   it('is a build-only Vite plugin', () => {
