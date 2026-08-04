@@ -11,7 +11,7 @@
 # build: dist/ is architecture-neutral and everything else is a copy.
 
 # --- build stage ------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:233761595746769ebfdb6090f44fc7cdf818ae0ce62d2b37e0367723b9823e36 AS build
 WORKDIR /app
 
 # Endpoints are baked at build time (Vite inlines import.meta.env), so an image
