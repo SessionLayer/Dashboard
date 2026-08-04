@@ -111,3 +111,100 @@ jobs:
             "$SBOM" "${SBOM}.sigstore.json" \
             "${{ steps.attest.outputs.bundle-path }}" \
             --clobber
+
+  # The container image for the same tag, held to the integrity story the dist
+  # tarball already has: multi-arch, SBOM and provenance attached to the index,
+  # signed with the same keyless Sigstore identity — and verified in this job,
+  # because a signature nobody checks is a claim rather than a control.
+  #
+  # No VITE_* build args: the endpoints Vite inlines are deployment-specific, so
+  # the published image carries the localhost dev defaults and an operator
+  # rebuilds it with their own (see deploy/README.md).
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # push to GHCR
+      id-token: write # keyless cosign + provenance via ambient GitHub OIDC
+      attestations: write # actions/attest-build-provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No QEMU: dist/ is architecture-neutral and the serve stage runs no
+      # commands, so neither platform needs emulation.
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      # sbom + provenance attach an SPDX document and SLSA provenance to the
+      # index as in-toto attestations, one per platform. No :latest — a floating
+      # tag is the hazard this project refuses everywhere else.
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/sessionlayer/dashboard:${{ github.ref_name }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+          sbom: true
+          provenance: mode=max
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      # --recursive so every platform manifest is signed, not only the index.
+      - name: Sign image
+        env:
+          COSIGN_YES: 'true'
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes --recursive "ghcr.io/sessionlayer/dashboard@${DIGEST}"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ghcr.io/sessionlayer/dashboard
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      # Every assertion here names the value it expects. A step that only checks
+      # an exit code cannot tell the outcome it wants from the one it fears.
+      - name: Verify signature, attestation, platforms, and SBOM
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ghcr.io/sessionlayer/dashboard@${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          cosign verify \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/release\.yml@refs/tags/" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$IMAGE" > cosign-verify.json
+          jq -e 'length > 0' cosign-verify.json > /dev/null
+          echo "cosign: $(jq 'length' cosign-verify.json) verified signature(s)"
+
+          gh attestation verify "oci://${IMAGE}" --repo "$GITHUB_REPOSITORY"
+
+          docker buildx imagetools inspect "$IMAGE" --format '{{json .Manifest}}' \
+            | jq -er '[.manifests[].platform | select(.os == "linux") | .architecture] as $a
+                      | if ($a | index("amd64")) != null and ($a | index("arm64")) != null
+                        then "platforms: \($a)"
+                        else error("index is missing a platform: \($a)") end'
+
+          docker buildx imagetools inspect "$IMAGE" --format '{{json .SBOM}}' \
+            | jq -er '[.. | objects | (.packages? // .components? // empty) | length] as $n
+                      | if ($n | length) > 0 and ($n | map(. > 0) | all)
+                        then "sbom components per platform: \($n)"
+                        else error("no SBOM attestation with components: \($n)") end'
