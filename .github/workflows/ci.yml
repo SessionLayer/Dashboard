@@ -43,4 +43,331 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Gate (lint, build, unit, e2e, audit, contract drift)
+        # The gate builds with no endpoints, which the guard refuses unless
+        # told the unconfigured build is intended.
+        env:
+          SL_ALLOW_UNCONFIGURED_BUILD: '1'
         run: npm run gate
+
+  # Not the required check — `gate` is. This one keeps deploy/Dockerfile from
+  # rotting into something nobody builds, and holds the image to the posture a
+  # hardened deployment assumes.
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Build amd64
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: sessionlayer/dashboard:ci
+          build-args: |
+            SL_ALLOW_UNCONFIGURED_BUILD=1
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+
+      # Compile proof only — nothing here needs to execute, so the result is not
+      # loaded. The npm stage is reused from the amd64 build above.
+      - name: Build arm64
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/arm64
+          outputs: type=cacheonly
+          build-args: |
+            SL_ALLOW_UNCONFIGURED_BUILD=1
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+
+      # The Alpine nginx base has a shell by design, so the "no shell" assertion
+      # the distroless components make has no counterpart here; the uid it runs
+      # as is asserted instead.
+      - name: Assert runtime posture
+        env:
+          IMG: sessionlayer/dashboard:ci
+        run: |
+          set -euo pipefail
+
+          user=$(docker image inspect -f '{{.Config.User}}' "$IMG")
+          case "$user" in
+            '') echo "::error::image declares no USER"; exit 1 ;;
+            root|0|0:0|root:root) echo "::error::image runs as root ($user)"; exit 1 ;;
+          esac
+          echo "USER=$user"
+
+          uid=$(docker run --rm --entrypoint /usr/bin/id "$IMG" -u)
+          if [ "$uid" = 0 ]; then
+            echo "::error::container process runs as uid 0"
+            exit 1
+          fi
+          echo "runtime uid=$uid"
+
+          for label in title description source licenses version revision; do
+            value=$(docker image inspect \
+              -f "{{index .Config.Labels \"org.opencontainers.image.$label\"}}" "$IMG")
+            if [ -z "$value" ] || [ "$value" = '<no value>' ]; then
+              echo "::error::org.opencontainers.image.$label is unset"
+              exit 1
+            fi
+            echo "org.opencontainers.image.$label=$value"
+          done
+
+  # Not the required check — `gate` is. Without this the chart's only validation
+  # is whatever someone ran by hand, and the first values change that breaks a
+  # render lands green.
+  chart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CHART: deploy/helm/sessionlayer-dashboard
+      # Floating tool versions are the hazard a floating image tag is. Both
+      # downloads are checksum-verified below.
+      HELM_VERSION: 3.19.0
+      HELM_SHA256: a7f81ce08007091b86d8bd696eb4d86b8d0f2e1b9f6c714be62f82f96a594496
+      KUBECONFORM_VERSION: 0.7.0
+      KUBECONFORM_SHA256: c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3
+      # Schemas are fetched per run, so the Kubernetes version is pinned too;
+      # otherwise the meaning of a green check moves under the chart.
+      KUBE_VERSION: 1.31.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install helm and kubeconform
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+
+          curl -fsSLO "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+          echo "${HELM_SHA256}  helm-v${HELM_VERSION}-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf "helm-v${HELM_VERSION}-linux-amd64.tar.gz" linux-amd64/helm
+          mv linux-amd64/helm "$RUNNER_TEMP/bin/helm"
+
+          curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  kubeconform-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf kubeconform-linux-amd64.tar.gz -C "$RUNNER_TEMP/bin" kubeconform
+
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Lint, render and schema-check
+        run: |
+          set -euo pipefail
+          helm lint "$CHART"
+
+          # The two installs this chart supports: an image you built, and the
+          # published evaluation image named as such. A bare `helm install` is
+          # neither, and the refusal step below asserts it stays refused.
+          for values in "$CHART"/ci/*.yaml; do
+            name=$(basename "$values" .yaml)
+            echo "::group::$name"
+            helm lint "$CHART" -f "$values"
+
+            out="$RUNNER_TEMP/$name.rendered.yaml"
+            helm template chart-ci "$CHART" -f "$values" > "$out"
+            [ -s "$out" ] || { echo "::error::$name rendered nothing"; exit 1; }
+
+            # A bare exit code cannot tell a clean run from an empty one:
+            # kubeconform exits 0 over zero resources, and a resource whose
+            # schema it never found is 'skipped', not failed.
+            report=$(kubeconform -strict -summary -output json \
+              -schema-location default -kubernetes-version "$KUBE_VERSION" "$out")
+            echo "$report" | jq -c '.summary'
+            echo "$report" | jq -e \
+              '.summary.valid > 0 and .summary.invalid == 0
+               and .summary.errors == 0 and .summary.skipped == 0' >/dev/null
+
+            # A template that silently stops rendering still schema-validates.
+            workloads=$(grep -c '^kind: Deployment$' "$out" || true)
+            [ "$workloads" = 1 ] || { echo "::error::$name rendered $workloads Deployments, expected 1"; exit 1; }
+            # Repository per values file, since a production install runs an
+            # image the operator built and only the evaluation one is ours.
+            repo=$(grep -E '^  repository:' "$values" | head -1 | awk '{print $2}')
+            grep -qE "^          image: ${repo}[@:]" "$out" \
+              || { echo "::error::$name rendered no image reference for $repo"; exit 1; }
+            echo "::endgroup::"
+          done
+
+          # An unset connect-src allow-list must collapse to 'self' rather than
+          # widening, so that render carries no SL_CSP_CONNECT_SRC at all.
+          if grep -q 'SL_CSP_CONNECT_SRC' "$RUNNER_TEMP/evaluation-values.rendered.yaml"; then
+            echo "::error::the default render sets SL_CSP_CONNECT_SRC; an unset allow-list must collapse connect-src to 'self'"
+            exit 1
+          fi
+          grep -q 'SL_CSP_CONNECT_SRC' "$RUNNER_TEMP/production-values.rendered.yaml" \
+            || { echo "::error::the production render does not set SL_CSP_CONNECT_SRC"; exit 1; }
+
+          # image.digest must win over image.tag, or pinning by digest is
+          # decoration. Both are set here, and only one may survive.
+          ref=$(helm template chart-ci "$CHART" -f "$CHART"/ci/evaluation-values.yaml \
+                  --set image.tag=v9.9.9 --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+                | grep -m1 -oE 'image: ghcr\.io/sessionlayer/dashboard[@:][^ ]+')
+          echo "$ref"
+          case "$ref" in
+            *"@sha256:0000000000000000000000000000000000000000000000000000000000000000") ;;
+            *) echo "::error::image.digest did not win over image.tag: $ref"; exit 1 ;;
+          esac
+
+      # The half with teeth. This chart holds no credential, so it has no secret
+      # reference to demand; its controls are the values schema and the
+      # structural guards, and those are what is asserted.
+      - name: Assert the chart refuses an install it must refuse
+        run: |
+          set -euo pipefail
+          prod="$CHART/ci/production-values.yaml"
+
+          refuse() { # refuse <expected-substring> <command...>
+            local want="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1); rc=$?
+            set -e
+            if [ "$rc" -eq 0 ]; then
+              echo "::error::expected a refusal naming '$want', but this succeeded: $*"
+              exit 1
+            fi
+            case "$out" in
+              *"$want"*) printf 'refused on %s\n' "$want" ;;
+              *) echo "::error::refused, but not on '$want'. Actual output:"
+                 printf '%s\n' "$out"
+                 exit 1 ;;
+            esac
+          }
+
+          renders() { # renders <why> <command...>
+            local why="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1); rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then
+              echo "::error::$why should render, but was refused. A guard that says no to everything passes every refusal assertion above:"
+              printf '%s\n' "$out"
+              exit 1
+            fi
+            printf 'renders as required: %s\n' "$why"
+          }
+
+          # A cleartext origin in connect-src would let the page make
+          # credential-bearing calls a network attacker can read.
+          refuse "/csp/connectSrc" \
+            helm lint "$CHART" -f "$prod" --set 'csp.connectSrc={http://cp.example.com}'
+
+          # The published image is an evaluation build: the Control Plane and
+          # identity endpoints are compiled into the bundle and that one was
+          # built with none, so it calls http://localhost:8080 and nothing at
+          # runtime repoints it. A bare `helm install` used to deploy it and say
+          # nothing.
+          refuse "which is an evaluation build" \
+            helm template chart-ci "$CHART"
+          refuse "which is an evaluation build" \
+            helm template chart-ci "$CHART" --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000
+          renders "the evaluation image, named as such" \
+            helm template chart-ci "$CHART" --set image.allowUnconfiguredBuild=true
+          renders "an image the operator built" \
+            helm template chart-ci "$CHART" --set image.repository=registry.example.com/sessionlayer/dashboard
+          # The budget guard, over every input path. --set yields an int64 where a
+          # values file yields a float64 and a percentage yields a string, and a
+          # guard written against one of those is blind to the others.
+          refuse "is not below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=99
+          # Kubernetes rounds a minAvailable percentage UP, so with 3 replicas
+          # the budget is already unsatisfiable at 67%, long before 100%.
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=100%'
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=67%'
+          refuse "neither a pod count nor a percentage" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=abc'
+          refuse "cannot be negative" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=-1
+
+          # The other direction. Without these, a guard that refused every value
+          # would satisfy every refusal assertion above it.
+          renders "the largest percentage that still leaves room (66% of 3)" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=66%'
+          renders "a count below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=1
+
+          # values.schema.json must reject a malformed values file rather than
+          # rendering something surprising.
+          refuse "/image/digest" \
+            helm lint "$CHART" -f "$prod" --set image.digest=sha256:abc
+          refuse "additional properties" \
+            helm lint "$CHART" -f "$prod" --set replicaCoutn=2
+
+      # Nothing else ties the chart's runtime uid to the image's own USER, and
+      # the two disagreed for hours today, caught only because someone looked.
+      # This needs no image build: both files are in this checkout.
+      - name: Assert the chart and the image agree on the runtime uid
+        run: |
+          set -euo pipefail
+          dockerfile=deploy/Dockerfile
+
+          # A missing USER must not read as "nothing to compare".
+          line=$(grep -E '^USER[[:space:]]' "$dockerfile" | tail -1 || true)
+          [ -n "$line" ] || {
+            echo "::error::$dockerfile declares no USER, so the image runs as root and runAsNonRoot has nothing to enforce"
+            exit 1
+          }
+          spec=$(printf '%s' "${line#USER }" | tr -d '[:space:]')
+          img_uid=${spec%%:*}
+          img_gid=${spec#*:}
+          [ "$img_gid" = "$spec" ] && img_gid=""
+
+          # A named user is a different defect from a wrong number, and saying so
+          # matters: reported as a mismatch, someone would "fix" it by copying the
+          # name into the chart, where runAsNonRoot still could not enforce it.
+          case "$img_uid" in
+            ''|*[!0-9]*)
+              echo "::error::$dockerfile has USER $spec, which is not numeric. Kubernetes runAsNonRoot cannot enforce a named user without an /etc/passwd lookup in the image. Make the Dockerfile numeric; do not put the name in the chart."
+              exit 1 ;;
+          esac
+          echo "$dockerfile: USER $spec"
+
+          out="$RUNNER_TEMP/uid-check.yaml"
+          helm template chart-ci "$CHART" -f "$CHART/ci/production-values.yaml" > "$out"
+
+          # Every declaration of each id, pod-level and container-level, so a
+          # disagreement between the two is caught as well as one with the image.
+          check() { # check <field> <expected>
+            local field="$1" want="$2" got n
+            got=$(grep -oE "^[[:space:]]*$field:[[:space:]]*[0-9]+" "$out" | grep -oE '[0-9]+$' | sort -u)
+            n=$(printf '%s' "$got" | grep -c . || true)
+            if [ -z "$want" ]; then
+              [ "$n" -eq 0 ] || echo "note: chart sets $field=$(echo $got) and $dockerfile names no group"
+              return 0
+            fi
+            [ "$n" -eq 1 ] || {
+              echo "::error::the render declares $n distinct numeric $field values ($(echo $got)); expected exactly one"
+              exit 1
+            }
+            [ "$got" = "$want" ] || {
+              echo "::error::chart $field is $got but $dockerfile has $spec. runAsUser wins at runtime, so the image's own USER is the one that quietly stops describing what runs."
+              exit 1
+            }
+            echo "chart $field = $got"
+          }
+          check runAsUser "$img_uid"
+          check runAsGroup "$img_gid"
+          check fsGroup "$img_gid"
+
+      - name: helm package
+        run: |
+          set -euo pipefail
+          helm package "$CHART" -d "$RUNNER_TEMP/packaged"
+          ls -l "$RUNNER_TEMP/packaged"

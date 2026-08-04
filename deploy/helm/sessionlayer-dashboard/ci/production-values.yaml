@@ -1,0 +1,53 @@
+# A complete, realistic production configuration, used to lint and schema-check
+# the chart. The Dashboard holds no credential, so nothing here is one.
+replicaCount: 3
+
+# A production install runs an image you built: the Control Plane and identity
+# provider endpoints are compiled into the bundle, so the published image can
+# only ever point at the evaluation endpoints it was built with. See
+# ci/evaluation-values.yaml for that one.
+image:
+  repository: registry.example.com/sessionlayer/dashboard
+  tag: "v0.0.2"
+  digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ghcr-pull
+
+csp:
+  connectSrc:
+    - https://cp.example.com
+    - https://idp.example.com
+    - https://recordings.example.com
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true
+  ingressFromNamespaceSelector:
+    kubernetes.io/metadata.name: ingress-nginx
+  ingressFromPodSelector:
+    app.kubernetes.io/name: ingress-nginx
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: sessionlayer-dashboard

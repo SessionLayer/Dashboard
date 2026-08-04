@@ -1,0 +1,149 @@
+# Default values for sessionlayer-dashboard.
+#
+# The Dashboard is a static bundle behind nginx. It holds no credential: the
+# Control Plane URL and the OIDC client id are baked into the bundle at image
+# build time, and both are public values a browser reads anyway. The only
+# secret reference this chart has is imagePullSecrets.
+
+replicaCount: 2
+
+image:
+  # The published image at this repository is an evaluation build: Vite inlines
+  # the Control Plane and identity provider endpoints when the image is built,
+  # and that one was built with none, so its bundle calls http://localhost:8080
+  # and no value here can repoint it. Rendering refuses it until you either
+  # point this at an image you built with your own endpoints, or say below that
+  # the evaluation image is what you meant.
+  repository: ghcr.io/sessionlayer/dashboard
+  allowUnconfiguredBuild: false
+  # Empty resolves to the chart's appVersion.
+  tag: ""
+  # A tag is mutable and a digest is not. Set this in production; it wins over
+  # tag when both are present. It matters more here than elsewhere: the API and
+  # identity provider the bundle talks to are compiled into the image, so the
+  # tag alone does not say which deployment an image belongs to.
+  digest: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  # nginx never calls the Kubernetes API.
+  automountServiceAccountToken: false
+
+csp:
+  # Origins the bundle is allowed to fetch from, beyond its own: the Control
+  # Plane REST API, the OIDC issuer's token endpoint, and the object store the
+  # browser downloads still-encrypted recordings from.
+  #
+  # Empty collapses connect-src to 'self', which blocks every cross-origin call
+  # until you name the origins. That is the fail-closed direction: a
+  # single-origin deployment behind one reverse proxy needs nothing here, and
+  # every other deployment gets a loud failure rather than a quiet widening.
+  connectSrc: []
+
+service:
+  type: ClusterIP
+  annotations: {}
+  port: 80
+
+# TLS is terminated in front of this. The image sends HSTS on every response,
+# which assumes https, and the bundle's OIDC flow refuses a cleartext endpoint.
+containerPort: 8080
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podSecurityContext:
+  # uid 101 is the unprivileged nginx user in the base image, which listens on
+  # 8080 rather than 80 so no privileged bind is ever needed.
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# nginx keeps its pid file, its client and proxy temp paths, and the config it
+# renders from the environment at start, all under /tmp. That makes this the
+# only writable path the image needs, and a read-only root filesystem holds.
+tmpVolume:
+  medium: Memory
+  sizeLimit: 16Mi
+
+probes:
+  # Static files off local disk: a failure here means nginx is gone, not that a
+  # dependency is slow, so the same request serves all three probes.
+  readiness:
+    enabled: true
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 3
+  liveness:
+    enabled: true
+    periodSeconds: 15
+    timeoutSeconds: 1
+    failureThreshold: 3
+  startup:
+    enabled: true
+    periodSeconds: 2
+    timeoutSeconds: 1
+    failureThreshold: 15
+
+# nginx finishes in-flight responses for a static file in milliseconds.
+terminationGracePeriodSeconds: 30
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  # The browser fetches the API, the identity provider and the object store
+  # directly, so nothing but DNS leaves this pod. Serving static files needs no
+  # egress at all.
+  dnsPodSelector:
+    k8s-app: kube-dns
+  # Empty accepts ingress on the container port from anywhere in the cluster,
+  # which is what an ingress controller in an arbitrary namespace needs. Set it
+  # to your controller's labels to narrow that.
+  ingressFromPodSelector: {}
+  ingressFromNamespaceSelector: {}
+  extraIngress: []
+  extraEgress: []
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+priorityClassName: ""
+
+extraEnv: []
+extraEnvFrom: []
+extraVolumes: []
+extraVolumeMounts: []

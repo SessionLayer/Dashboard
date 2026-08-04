@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sessionlayer-dashboard values",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": { "type": "object" },
+    "replicaCount": { "type": "integer", "minimum": 1 },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "allowUnconfiguredBuild": { "type": "boolean" },
+        "tag": { "type": "string" },
+        "digest": { "type": "string", "pattern": "^$|^sha256:[a-f0-9]{64}$" },
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": { "name": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "nameOverride": { "type": "string", "maxLength": 63 },
+    "fullnameOverride": { "type": "string", "maxLength": 63 },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" },
+        "annotations": { "type": "object" },
+        "automountServiceAccountToken": { "type": "boolean" }
+      }
+    },
+    "csp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "connectSrc": {
+          "type": "array",
+          "description": "Cross-origin sources the bundle may fetch from. https only; a cleartext origin would let the page make credential-bearing calls a network attacker can read.",
+          "items": { "type": "string", "pattern": "^https://[^ ]+$" }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["ClusterIP", "NodePort", "LoadBalancer"] },
+        "annotations": { "type": "object" },
+        "port": { "$ref": "#/definitions/port" }
+      }
+    },
+    "containerPort": { "$ref": "#/definitions/port" },
+    "resources": { "type": "object" },
+    "podSecurityContext": { "type": "object" },
+    "containerSecurityContext": { "type": "object" },
+    "tmpVolume": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "medium": { "enum": ["", "Memory"] },
+        "sizeLimit": { "type": "string", "minLength": 1 }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readiness": { "$ref": "#/definitions/probe" },
+        "liveness": { "$ref": "#/definitions/probe" },
+        "startup": { "$ref": "#/definitions/probe" }
+      }
+    },
+    "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+    "updateStrategy": { "type": "object" },
+    "podDisruptionBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "minAvailable": { "type": ["integer", "string"] }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "dnsPodSelector": { "type": "object" },
+        "ingressFromPodSelector": { "type": "object" },
+        "ingressFromNamespaceSelector": { "type": "object" },
+        "extraIngress": { "type": "array", "items": { "type": "object" } },
+        "extraEgress": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "podAnnotations": { "type": "object" },
+    "podLabels": { "type": "object" },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array", "items": { "type": "object" } },
+    "affinity": { "type": "object" },
+    "topologySpreadConstraints": { "type": "array", "items": { "type": "object" } },
+    "priorityClassName": { "type": "string" },
+    "extraEnv": { "type": "array", "items": { "type": "object" } },
+    "extraEnvFrom": { "type": "array", "items": { "type": "object" } },
+    "extraVolumes": { "type": "array", "items": { "type": "object" } },
+    "extraVolumeMounts": { "type": "array", "items": { "type": "object" } }
+  },
+  "definitions": {
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "periodSeconds": { "type": "integer", "minimum": 1 },
+        "timeoutSeconds": { "type": "integer", "minimum": 1 },
+        "failureThreshold": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
