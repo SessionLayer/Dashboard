@@ -43,6 +43,10 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Gate (lint, build, unit, e2e, audit, contract drift)
+        # The gate builds with no endpoints, which the guard refuses unless
+        # told the unconfigured build is intended.
+        env:
+          SL_ALLOW_UNCONFIGURED_BUILD: '1'
         run: npm run gate
 
   # Not the required check — `gate` is. This one keeps deploy/Dockerfile from

@@ -45,12 +45,22 @@ jobs:
           echo "SBOM=dashboard-${VER}-sbom.cdx.json" >> "$GITHUB_ENV"
 
       - name: Build and package dist
+        # The release bundle is an unconfigured evaluation artifact: Vite
+        # inlines the endpoints and this workflow has none to give it. The
+        # guard refuses that build unless it is told so deliberately, which
+        # is what this says.
+        env:
+          SL_ALLOW_UNCONFIGURED_BUILD: '1'
         run: |
           npm run build
           ./.github/scripts/pack-dist.sh "$TARBALL"
 
       # Rebuild in a clean tree and assert an identical tarball digest.
       - name: Reproducibility gate
+        # Same reason as the build above: both halves of the double-build must
+        # run under the same environment or they are not comparable.
+        env:
+          SL_ALLOW_UNCONFIGURED_BUILD: '1'
         run: |
           sha256sum "$TARBALL" | awk '{print $1}' > first.sha256
           rm -rf dist "$TARBALL"

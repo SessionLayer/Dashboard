@@ -14,15 +14,23 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
 WORKDIR /app
 
-# Endpoints are baked at build time (Vite inlines import.meta.env). The https
-# guard (deploy/httpsGuard.ts) fails this build if any credential-bearing
-# endpoint is a non-localhost cleartext http:// value.
+# Endpoints are baked at build time (Vite inlines import.meta.env), so an image
+# cannot be repointed afterwards. Build with your own --build-arg values for a
+# real deployment.
+#
+# SL_ALLOW_UNCONFIGURED_BUILD is how this image says it meant to be built with
+# none: without it the guard refuses, because the fallback is
+# http://localhost:8080 and a bundle carrying that is one an operator cannot
+# fix. Set it here and nowhere else, so an operator building their own image
+# gets the refusal.
 ARG VITE_CP_BASE_URL
 ARG VITE_OIDC_ISSUER
 ARG VITE_OIDC_CLIENT_ID
+ARG SL_ALLOW_UNCONFIGURED_BUILD=1
 ENV VITE_CP_BASE_URL=$VITE_CP_BASE_URL \
     VITE_OIDC_ISSUER=$VITE_OIDC_ISSUER \
-    VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
+    VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID \
+    SL_ALLOW_UNCONFIGURED_BUILD=$SL_ALLOW_UNCONFIGURED_BUILD
 
 COPY package.json package-lock.json ./
 RUN npm ci

@@ -19,7 +19,7 @@ export const UNCONFIGURED_OPT_IN = 'SL_ALLOW_UNCONFIGURED_BUILD';
 
 export function httpsBaseViolations(
   env: Record<string, string | undefined>,
-  optIn: string | undefined = undefined,
+  optIn?: string,
 ): string[] {
   const violations: string[] = [];
 
