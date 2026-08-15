@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +6,18 @@ import { server } from '../../test/server';
 import { renderWithProviders } from '../../test/utils';
 import { cp, page, problem } from '../../test/msw';
 import type { RoleResource } from '../../api/types';
+import schemaSource from '../../api/schema.d.ts?raw';
 import { RolesScreen } from './RolesScreen';
+
+// The vocabulary is a compile-time union, so it is read back out of the generated
+// file: re-typing the 20 strings here would be the same bug this guards against.
+function generatedVocabulary(): string[] {
+  const match = /^\s+PlatformPermission:\s*(".*");$/m.exec(schemaSource);
+  if (match?.[1] === undefined) {
+    throw new Error('PlatformPermission union not found in schema.d.ts');
+  }
+  return match[1].split('|').map((member) => member.trim().replace(/"/g, ''));
+}
 
 const role = (over: Partial<RoleResource> = {}): RoleResource => ({
   id: '22222222-2222-2222-2222-222222222222',
@@ -93,6 +104,58 @@ describe('RolesScreen', () => {
       expect(body?.name).toBe('auditor');
     });
     expect(body?.permissions).toContain('audit:read');
+  });
+
+  it('offers every permission in the generated vocabulary', async () => {
+    server.use(http.get(cp('/v1/roles'), () => page([role()])));
+    renderWithProviders(<RolesScreen />, {
+      authenticated: true,
+      permissions: [...WRITE],
+    });
+    await screen.findByText('platform-admin');
+    fireEvent.click(screen.getByRole('button', { name: 'New role…' }));
+
+    const vocabulary = generatedVocabulary();
+    const group = screen.getByRole('group', { name: 'Permissions' });
+    // Count as well as presence: an extraction that silently matched fewer
+    // permissions would otherwise let a missing checkbox through.
+    expect(within(group).getAllByRole('checkbox')).toHaveLength(
+      vocabulary.length,
+    );
+    for (const permission of vocabulary) {
+      expect(within(group).getByLabelText(permission)).toBeInTheDocument();
+    }
+  });
+
+  // Called out by name because the Dashboard gates its own customer recording-key
+  // panel on this permission: if the role editor cannot offer it, no admin can be
+  // granted it, and the key that strict recording requires cannot be provisioned
+  // through this UI at all.
+  it('grants recording:key-manage', async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.get(cp('/v1/roles'), () => page([role()])),
+      http.post(cp('/v1/roles'), async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(role({ name: 'key-custodian' }), {
+          status: 201,
+        });
+      }),
+    );
+    renderWithProviders(<RolesScreen />, {
+      authenticated: true,
+      permissions: [...WRITE],
+    });
+    await screen.findByText('platform-admin');
+    fireEvent.click(screen.getByRole('button', { name: 'New role…' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name' }), {
+      target: { value: 'key-custodian' },
+    });
+    fireEvent.click(screen.getByLabelText('recording:key-manage'));
+    fireEvent.click(screen.getByRole('button', { name: 'Create role' }));
+    await waitFor(() => {
+      expect(body?.permissions).toContain('recording:key-manage');
+    });
   });
 
   it('sends the version on edit', async () => {
