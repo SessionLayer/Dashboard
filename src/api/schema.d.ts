@@ -1086,9 +1086,9 @@ export interface paths {
          *     handshake the Gateway already performs, for that name, once, before it
          *     expires.
          *
-         *     This is the API equivalent of the raw `INSERT INTO
-         *     runtime.gateway_enrollment_token` the install guide used to require, so
-         *     installing a Gateway no longer needs a database credential. Platform-RBAC
+         *     This is the API path for arming a Gateway enrollment, so installing a
+         *     Gateway needs no database credential and no direct write to
+         *     `runtime.gateway_enrollment_token`. Platform-RBAC
          *     gated (`gateway:enroll`) + audited.
          */
         post: operations["issueGatewayEnrollmentToken"];
