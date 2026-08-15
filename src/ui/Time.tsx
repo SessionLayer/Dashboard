@@ -23,7 +23,7 @@ function relative(from: number, now: number): string {
 
 /**
  * A timestamp shown as a human-relative label with the exact UTC value in the
- * `title`/`dateTime` (audit timestamps are UTC — Design §12.3). Invalid/absent
+ * `title`/`dateTime` (audit timestamps are UTC). Invalid/absent
  * values render an em dash rather than "Invalid Date".
  */
 export function Time({ value }: { value: string | undefined | null }) {

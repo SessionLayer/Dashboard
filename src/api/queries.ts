@@ -7,7 +7,7 @@ import type { HealthStatus, VersionInfo } from './types';
 export { ProblemError } from './problem';
 export type { HealthStatus, VersionInfo, ProblemDetails } from './types';
 
-/** TanStack Query options for `GET /v1/version` (Design §13; FR-API-1). */
+/** TanStack Query options for `GET /v1/version`. */
 export const versionQueryOptions = queryOptions({
   queryKey: ['cp', 'version'] as const,
   queryFn: async ({ signal }): Promise<VersionInfo> =>

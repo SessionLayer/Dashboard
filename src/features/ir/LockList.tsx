@@ -111,7 +111,7 @@ export function LockList() {
     <section className="stack">
       <PageHeader
         title="Locks"
-        description="Incident-response denies — a top-tier, un-overridable block (Design §8.3/§8.4)."
+        description="Incident-response denies — a top-tier, un-overridable block."
         actions={
           canWrite ? (
             <Button

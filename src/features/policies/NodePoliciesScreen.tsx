@@ -68,7 +68,7 @@ export function NodePoliciesScreen() {
     <>
       <CrudScreen
         title="Node policies"
-        description="Desired labels, connector kind, and host-trust references (Design §12A)."
+        description="Desired labels, connector kind, and host-trust references."
         newLabel="New node policy…"
         canWrite={canWrite}
         onNew={() => {

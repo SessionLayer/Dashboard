@@ -122,7 +122,7 @@ describe('JitPoliciesScreen', () => {
     });
   });
 
-  // (FR-SESS-2) JIT policies grant from the same full capability
+  // JIT policies grant from the same full capability
   // vocabulary as rules — the forwarding/X11 capabilities are selectable and
   // land in the submitted payload.
   it('grants the forwarding capabilities through the create payload', async () => {

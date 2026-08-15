@@ -13,7 +13,7 @@ import {
   PLAINTEXT_UTF8,
 } from './slrecGolden';
 
-// Cross-language conformance (M15): `slrec.test.ts` only ever exercises
+// Cross-language conformance: `slrec.test.ts` only ever exercises
 // production `unsealRecording` against objects sealed by the TEST-ONLY TS
 // mirror (`../test/recordingFixture.ts`) -- the production decryptor has
 // never before been run against a Rust-sealed object. `slrecGolden.ts` is

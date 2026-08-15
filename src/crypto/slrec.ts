@@ -5,7 +5,7 @@
  *
  * The customer PRIVATE key never leaves this module's call stack: it is imported as a
  * non-extractable WebCrypto key and used only for `deriveBits`. It is never serialized,
- * sent, or persisted — the crown-jewels invariant (Design §12.2/§15).
+ * sent, or persisted, so nothing that leaves the browser can decrypt a recording.
  */
 
 const MAGIC = new TextEncoder().encode('SLREC1');

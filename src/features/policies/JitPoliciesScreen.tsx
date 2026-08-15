@@ -85,7 +85,7 @@ export function JitPoliciesScreen() {
     <>
       <CrudScreen
         title="JIT policies"
-        description="Requestable targets, capabilities, max TTL, and the 0–3 level approval chain (FR-ACC-3)."
+        description="Requestable targets, capabilities, max TTL, and the 0–3 level approval chain."
         newLabel="New JIT policy…"
         canWrite={canWrite}
         onNew={() => {

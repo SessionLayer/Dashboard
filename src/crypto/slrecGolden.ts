@@ -1,4 +1,4 @@
-// GENERATED fixture (M15): the golden SLREC1 object sealed by the REAL
+// GENERATED fixture: the golden SLREC1 object sealed by the REAL
 // Gateway `RecordingCipher::seal_to_customer` + `seal_frame` path
 // (`gateway-core/src/ssh/recorder/seal.rs`), copied byte-for-byte from
 // `Gateway/gateway-core/tests/fixtures/slrec_conformance/golden.json`.

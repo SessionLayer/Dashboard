@@ -72,7 +72,7 @@ export function SessionLimitPoliciesScreen() {
     <>
       <CrudScreen
         title="Session-limit policies"
-        description="Per-identity overrides for the concurrent-session cap, max session duration, and idle timeout (FR-SESS-3). The most restrictive matching value wins per knob; an absent knob defers to the cluster default."
+        description="Per-identity overrides for the concurrent-session cap, max session duration, and idle timeout. The most restrictive matching value wins per knob; an absent knob defers to the cluster default."
         newLabel="New session-limit policy…"
         canWrite={canWrite}
         onNew={() => {

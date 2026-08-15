@@ -108,7 +108,7 @@ describe('RulesScreen', () => {
     });
   });
 
-  // (FR-SESS-2) The CP grant is the sole switch for forwarding/X11 — every
+  // The CP grant is the sole switch for forwarding/X11 — every
   // capability in the contract vocabulary is grantable here and actually lands
   // in the submitted payload, not just rendered.
   it('grants all eight capabilities through the create payload', async () => {

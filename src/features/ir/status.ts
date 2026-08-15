@@ -1,7 +1,7 @@
 import type { BadgeTone } from '../../ui';
 import type { Capability } from '../../api/types';
 
-/** JIT state-machine values (Design §7); the API sends these as a plain string. */
+/** JIT state-machine values; the API sends these as a plain string. */
 export const JIT_STATES = [
   'REQUESTED',
   'PENDING_APPROVAL',

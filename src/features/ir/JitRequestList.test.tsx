@@ -241,7 +241,7 @@ describe('JitRequestList', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
     expect(await screen.findByText('Approval chain')).toBeInTheDocument();
-    // L2's line is unique to the fetched detail (getJitRequest), not the row.
+    // Level 2 is unique to the fetched detail (getJitRequest), not the row.
     expect(screen.getByText(/oidc_group/)).toBeInTheDocument();
   });
 });

@@ -51,7 +51,7 @@ export function CapabilityDefsScreen() {
     <>
       <CrudScreen
         title="Capability catalogue"
-        description="Which SSH channel capabilities are requestable (Design D14)."
+        description="Which SSH channel capabilities are requestable."
         newLabel="New capability…"
         canWrite={canWrite}
         onNew={() => {

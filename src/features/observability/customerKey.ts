@@ -34,8 +34,8 @@ export interface CustomerKeyState {
 /**
  * Holds the customer's recording decryption key in component state ONLY. The key
  * is imported non-extractable, never serialized, never sent to the Control Plane
- * or object store, and never written to storage — the §12.2/§15 crown-jewels
- * invariant. It vanishes when the screen unmounts.
+ * or object store, and never written to storage. It vanishes when the screen
+ * unmounts.
  */
 export function useCustomerKey(): CustomerKeyState {
   const [key, setKey] = useState<CryptoKey | undefined>();

@@ -66,7 +66,7 @@ export function BreakglassPoliciesScreen() {
     <>
       <CrudScreen
         title="Break-glass policies"
-        description="Emergency-access paths: recording-strict, alert target, review, and IdP-independent auth (FR-ACC-6)."
+        description="Emergency-access paths: recording-strict, alert target, review, and IdP-independent auth."
         newLabel="New break-glass policy…"
         canWrite={canWrite}
         onNew={() => {

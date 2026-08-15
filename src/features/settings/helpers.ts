@@ -25,7 +25,7 @@ import type { WormMode } from '../../api/types';
  * Control Plane deployment concern and appears only in the 422 detail — but
  * "this field is pinned" without "by this property" leaves nobody able to act.
  * The names were read from the Control Plane's own `SessionLimitProperties` and
- * `BootstrapService`, not copied from a design document, and the failure mode if
+ * `BootstrapService`, not transcribed from elsewhere, and the failure mode if
  * one is ever renamed is bounded by `pinnedBy` below: a pinned field this build
  * cannot name still renders pinned, never writable.
  */

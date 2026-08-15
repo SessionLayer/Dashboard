@@ -144,7 +144,7 @@ export function JitRequestList() {
     <section className="stack">
       <PageHeader
         title="JIT Access Requests"
-        description="Just-in-time access requests and their approval chains (Design §7)."
+        description="Just-in-time access requests and their approval chains."
         actions={
           <Button
             variant="primary"
@@ -217,7 +217,7 @@ const DECISION_COPY: Record<
   revoke: {
     title: 'Revoke JIT grant',
     confirm: 'Revoke',
-    body: 'Revoke this grant and write a strict Lock so any live session tears down (§8.4).',
+    body: 'Revoke this grant and write a strict Lock so any live session tears down.',
     danger: true,
   },
 };

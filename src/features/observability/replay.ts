@@ -1,5 +1,5 @@
 /**
- * The platform never sees plaintext and never sees the private key (Design §12.2).
+ * The platform never sees plaintext and never sees the private key.
  */
 
 import { api } from '../../api/client';
