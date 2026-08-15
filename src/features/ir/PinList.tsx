@@ -76,7 +76,7 @@ export function PinList() {
     <section className="stack">
       <PageHeader
         title="Pins & OTP"
-        description="AuthN shortcuts: key-fingerprint pins bound to an identity (Design §5.5) and admin-issued single-use OTPs (Design §5.4)."
+        description="AuthN shortcuts: key-fingerprint pins bound to an identity and admin-issued single-use OTPs."
         actions={
           canManage ? (
             <div className="cluster">

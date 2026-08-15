@@ -11,7 +11,7 @@ import type {
   Capability,
 } from '../../api/types';
 
-/** All the search dimensions the `/v1/audit-events` contract accepts (FR-AUD-8/9). */
+/** All the search dimensions the `/v1/audit-events` contract accepts. */
 export interface AuditFilters {
   actor?: string;
   subject?: string;

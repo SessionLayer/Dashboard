@@ -137,7 +137,7 @@ export function useLocks(): UseQueryResult<LockResource[]> {
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1.
+// NB: no contract-defined Idempotency-Key parameter on this operation.
 export function useCreateLock() {
   const qc = useQueryClient();
   return useMutation({
@@ -175,7 +175,7 @@ export function useBreakglassCredentials(): UseQueryResult<
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1.
+// NB: no contract-defined Idempotency-Key parameter on this operation.
 export function useRegisterBreakglassCredential() {
   const qc = useQueryClient();
   return useMutation({
@@ -215,7 +215,7 @@ export function useBreakglassOfflineCodes(): UseQueryResult<
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1.
+// NB: no contract-defined Idempotency-Key parameter on this operation.
 export function useIssueBreakglassOfflineCodes() {
   const qc = useQueryClient();
   return useMutation({
@@ -280,7 +280,7 @@ export function usePins(identity: string): UseQueryResult<PinResource[]> {
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1.
+// NB: no contract-defined Idempotency-Key parameter on this operation.
 export function useCreatePin() {
   const qc = useQueryClient();
   return useMutation({
@@ -304,7 +304,7 @@ export function useRevokePin() {
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1.
+// NB: no contract-defined Idempotency-Key parameter on this operation.
 export function useIssueOtp() {
   return useMutation({
     mutationFn: async (body: IssueOtpRequest): Promise<IssuedOtp> =>

@@ -13,7 +13,7 @@ import {
   PLAINTEXT_UTF8,
 } from './slrecGolden';
 
-// Cross-language conformance (M15): `slrec.test.ts` only ever exercises
+// Cross-language conformance: `slrec.test.ts` only ever exercises
 // production `unsealRecording` against objects sealed by the TEST-ONLY TS
 // mirror (`../test/recordingFixture.ts`) -- the production decryptor has
 // never before been run against a Rust-sealed object. `slrecGolden.ts` is
@@ -21,7 +21,7 @@ import {
 // (see `Gateway/gateway-core/tests/slrec_conformance.rs`); this file
 // decrypts it through the production path here, closing that gap.
 
-describe('SLREC1 cross-language conformance (M15)', () => {
+describe('SLREC1 cross-language conformance', () => {
   it('decrypts the Rust-sealed golden object via the production TS path', async () => {
     const object = hexToBytes(OBJECT_HEX);
     const key = await importCustomerPrivateKey(

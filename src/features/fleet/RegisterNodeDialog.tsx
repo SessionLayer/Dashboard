@@ -44,6 +44,9 @@ export function RegisterNodeDialog({ onClose }: { onClose: () => void }) {
     }
     const body: RegisterNodeRequest = {
       name: name.trim(),
+      // This dialog registers agentless nodes: it requires a dial address, which
+      // the contract accepts only for that kind.
+      connectorKind: 'agentless',
       address: address.trim(),
       ...(parsedLabels !== undefined ? { labels: parsedLabels } : {}),
       ...(hostCertificate.trim() !== ''

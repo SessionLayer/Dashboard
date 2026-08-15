@@ -26,7 +26,7 @@ function runStyle(s: CellStyle): CSSProperties {
 /**
  * Render the terminal grid. Text is emitted as escaped React children only — no
  * `innerHTML`/`dangerouslySetInnerHTML` anywhere — so recorded output can never
- * execute or inject markup (the §15 XSS invariant).
+ * execute or inject markup.
  */
 export function TerminalView({ snapshot }: { snapshot: TerminalSnapshot }) {
   return (

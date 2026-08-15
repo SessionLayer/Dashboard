@@ -13,7 +13,7 @@ import { useAuditEvents } from './auditHooks';
 import { outcomeTone } from './badges';
 
 /**
- * The FR-AUD-9 "full path" view: given one event, show every event sharing its
+ * The "full path" view: given one event, show every event sharing its
  * correlation id in chronological order (approve → connect → run → replay). The
  * search returns newest-first, so it is reversed here into story order.
  */

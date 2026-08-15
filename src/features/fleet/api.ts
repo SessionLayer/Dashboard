@@ -56,8 +56,8 @@ export function useNode(nodeId: string | undefined) {
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — OBS-1
-// (the same gap as the IR/access mutations).
+// NB: no contract-defined Idempotency-Key parameter on this operation — the
+// same gap as the IR/access mutations.
 export function useRegisterNode() {
   const qc = useQueryClient();
   return useMutation({

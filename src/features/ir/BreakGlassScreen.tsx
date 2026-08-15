@@ -73,7 +73,7 @@ export function BreakGlassScreen() {
     <section className="stack">
       <PageHeader
         title="Break-glass"
-        description="Emergency access: activations under mandatory review, registered credentials, and offline codes (Design §7, FR-ACC-6)."
+        description="Emergency access: activations under mandatory review, registered credentials, and offline codes."
       />
 
       <div

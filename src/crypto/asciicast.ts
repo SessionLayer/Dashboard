@@ -1,5 +1,5 @@
 /**
- * asciicast v2 parser (Design §12.1). A recording is a header line
+ * asciicast v2 parser. A recording is a header line
  * (`{"version":2,"width":…,"height":…,"timestamp":…}`) followed by event lines
  * `[elapsed, "code", "data"]` where code ∈ o(output) i(input) r(resize)
  * m(marker). File-transfer audit surfaces as `m` markers (the recorder emits
