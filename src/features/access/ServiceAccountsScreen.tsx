@@ -15,10 +15,12 @@ import {
   TextField,
   TextareaField,
   Time,
+  enumOptions,
   type Column,
 } from '../../ui';
 import { useCan } from '../../auth/AuthContext';
 import type {
+  IssueServiceAccountCredentialRequest,
   ServiceAccountAuthMethod,
   ServiceAccountResource,
 } from '../../api/types';
@@ -32,21 +34,23 @@ import {
   useUpdateServiceAccount,
 } from './hooks';
 
-const AUTH_METHOD_OPTIONS: readonly {
-  value: ServiceAccountAuthMethod;
-  label: string;
-}[] = [
-  { value: 'private_key_jwt', label: 'private_key_jwt' },
-  { value: 'mtls', label: 'mtls' },
-  { value: 'client_secret', label: 'client_secret' },
-];
+const AUTH_METHOD_OPTIONS = enumOptions<ServiceAccountAuthMethod>({
+  private_key_jwt: 'private_key_jwt',
+  mtls: 'mtls',
+  client_secret: 'client_secret',
+});
 
-type CredentialType = 'private_key_jwt' | 'mtls' | 'client_secret';
+// A separate vocabulary from the auth method, with the same members today. They
+// are kept apart rather than aliased so that the contract adding a credential
+// type, or an auth method that cannot be issued as one, does not quietly change
+// the other control.
+type CredentialType = IssueServiceAccountCredentialRequest['credentialType'];
 
-const CREDENTIAL_TYPE_OPTIONS: readonly {
-  value: CredentialType;
-  label: string;
-}[] = AUTH_METHOD_OPTIONS;
+const CREDENTIAL_TYPE_OPTIONS = enumOptions<CredentialType>({
+  private_key_jwt: 'private_key_jwt',
+  mtls: 'mtls',
+  client_secret: 'client_secret',
+});
 
 type Dialog =
   | { kind: 'create' }

@@ -1,21 +1,32 @@
 import { useId } from 'react';
 
-import { Button, Field, SelectField, TagField, TextField } from '../../ui';
+import {
+  Button,
+  Field,
+  SelectField,
+  TagField,
+  TextField,
+  enumMembers,
+} from '../../ui';
 import type { AccessModel, Capability } from '../../api/types';
 import type { AuditFilters as Filters } from './auditHooks';
 
-const CAPABILITIES: readonly Capability[] = [
-  'shell',
-  'exec',
-  'sftp',
-  'scp',
-  'port_forward_local',
-  'port_forward_remote',
-  'agent_forward',
-  'x11',
-];
+const CAPABILITIES = enumMembers<Capability>({
+  shell: true,
+  exec: true,
+  sftp: true,
+  scp: true,
+  port_forward_local: true,
+  port_forward_remote: true,
+  agent_forward: true,
+  x11: true,
+});
 
-const ACCESS_MODELS: readonly AccessModel[] = ['standing', 'jit', 'breakglass'];
+const ACCESS_MODELS = enumMembers<AccessModel>({
+  standing: true,
+  jit: true,
+  breakglass: true,
+});
 
 function DateTimeField({
   label,

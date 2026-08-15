@@ -14,6 +14,7 @@ import {
   TextField,
   TextareaField,
   Time,
+  enumOptions,
 } from '../../ui';
 import { useCan } from '../../auth/AuthContext';
 import type {
@@ -37,13 +38,10 @@ interface Derived {
   algorithmError: string | undefined;
 }
 
-const SEAL_ALGORITHMS: readonly {
-  value: RecordingKeySealAlgorithm;
-  label: string;
-}[] = [
-  { value: 'ecies_p256', label: 'ecies_p256 — EC public key on P-256' },
-  { value: 'rsa_oaep_sha256', label: 'rsa_oaep_sha256 — RSA public key' },
-];
+const SEAL_ALGORITHMS = enumOptions<RecordingKeySealAlgorithm>({
+  ecies_p256: 'ecies_p256 — EC public key on P-256',
+  rsa_oaep_sha256: 'rsa_oaep_sha256 — RSA public key',
+});
 
 /**
  * The customer recording key: the one setting a fresh install cannot start

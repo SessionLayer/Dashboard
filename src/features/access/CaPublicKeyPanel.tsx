@@ -4,12 +4,19 @@ import {
   CopyButton,
   Detail,
   DetailList,
+  enumMembers,
   type BadgeTone,
 } from '../../ui';
 import type { CaKind, CaRotationState } from '../../api/types';
 import { useCaPublicKey } from './hooks';
 
-const SSH_KINDS: readonly CaKind[] = ['session', 'user', 'host'];
+// Session first: it is the key a node install needs in `TrustedUserCAKeys`, and
+// this panel exists for that lookup. Key order is the presented order.
+const SSH_KINDS = enumMembers<CaKind>({
+  session: true,
+  user: true,
+  host: true,
+});
 
 const ROTATION_TONE: Record<CaRotationState, BadgeTone> = {
   incoming: 'info',

@@ -10,6 +10,7 @@ import {
   SelectField,
   TextField,
   Time,
+  enumOptions,
   type Column,
 } from '../../ui';
 import { useCan } from '../../auth/AuthContext';
@@ -40,12 +41,14 @@ function formatDuration(
 
 type AccessFilter = AccessModel | 'all';
 
-const ACCESS_OPTIONS: readonly { value: AccessFilter; label: string }[] = [
-  { value: 'all', label: 'All access models' },
-  { value: 'standing', label: 'Standing' },
-  { value: 'jit', label: 'JIT' },
-  { value: 'breakglass', label: 'Break-glass' },
-];
+// `all` is a filter sentinel, not a contract value; the rest are the generated
+// vocabulary and are exhaustive over it.
+const ACCESS_OPTIONS = enumOptions<AccessFilter>({
+  all: 'All access models',
+  standing: 'Standing',
+  jit: 'JIT',
+  breakglass: 'Break-glass',
+});
 
 type Dialog =
   | { kind: 'detail'; sessionId: string }
