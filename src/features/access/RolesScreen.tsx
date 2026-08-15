@@ -39,6 +39,7 @@ const PERMISSION_LABELS: Record<PlatformPermission, string> = {
   'recording:delete': 'recording:delete',
   'recording:key-manage': 'recording:key-manage',
   'audit:read': 'audit:read',
+  'metrics:read': 'metrics:read',
   'user:manage': 'user:manage',
   'settings:write': 'settings:write',
   'lock:read': 'lock:read',

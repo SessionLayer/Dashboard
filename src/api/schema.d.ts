@@ -136,14 +136,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List pins for an identity (admin). */
+        /**
+         * List live pins (admin).
+         * @description Lists ACTIVE pins — every one by default, or a single identity's when
+         *     `identity` is given. The unfiltered form is the one offboarding and incident
+         *     review need, where the questions are "which pins exist right now" and "who
+         *     still holds one"; requiring the identity up front assumed the caller already
+         *     knew the answer. A pin authenticates on its own and outlives the session it
+         *     was created for, so one nobody has accounted for is standing access.
+         *     Platform-RBAC gated (`user:manage`).
+         */
         get: operations["listPins"];
         put?: never;
         /**
          * Create an authN-shortcut pin (admin).
          * @description Pins a public-key fingerprint to `{identity, source-cidr, principals}`
          *     with a TTL capped at the authorization TTL.
-         *     Source IP is a deny-only reducer. Platform-RBAC gated + audited.
+         *     Source IP is a deny-only reducer. Platform-RBAC gated (`user:manage`) +
+         *     audited.
          */
         post: operations["createPin"];
         delete?: never;
@@ -162,7 +172,14 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke a pin (admin / offboarding / lock). */
+        /**
+         * Revoke a pin (admin / offboarding / lock).
+         * @description Revokes one pin, so the shortcut it granted stops authenticating from the
+         *     next connect. The withdrawal half of the pin surface: because a pin
+         *     authenticates on its own, withdrawing an identity's access means withdrawing
+         *     its pins, not only its sessions. Platform-RBAC gated (`user:manage`) +
+         *     audited.
+         */
         delete: operations["revokePin"];
         options?: never;
         head?: never;
@@ -183,8 +200,8 @@ export interface paths {
          * @description Issues a rotatable, revocable credential for a service account:
          *     a `private_key_jwt` public-key/JWKS reference, an mTLS
          *     certificate fingerprint, or (discouraged) a generated `client_secret`
-         *     returned once. Stored hashed / by reference. Platform-RBAC gated +
-         *     audited.
+         *     returned once. Stored hashed / by reference. Platform-RBAC gated
+         *     (`user:manage`) + audited.
          */
         post: operations["issueServiceAccountCredential"];
         delete?: never;
@@ -205,7 +222,10 @@ export interface paths {
         post?: never;
         /**
          * Revoke a machine-consumer credential (admin).
-         * @description Revocation takes effect immediately (new sessions denied).
+         * @description Revocation takes effect immediately (new sessions denied). The service
+         *     account itself survives — this withdraws one credential, so a compromised
+         *     key is retired without deleting the consumer that holds the rest.
+         *     Platform-RBAC gated (`user:manage`) + audited.
          */
         delete: operations["revokeServiceAccountCredential"];
         options?: never;
@@ -460,6 +480,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/nodes/{nodeId}/host-anchors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nodeId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a node's host-identity anchors (admin).
+         * @description Returns the node's current host-identity anchors — the host-CA-signed host
+         *     certificate and the pinned host keys the Gateway verifies the node's
+         *     presented host identity against before any inner-leg auth. Public material
+         *     only; an anchor is a certificate or a public key and has no private half to
+         *     withhold. An EMPTY anchor list is the diagnosis for a node whose every
+         *     session aborts: the Gateway never TOFUs, so a node it cannot verify is one
+         *     it refuses. Platform-RBAC gated (`node:enroll`), the permission that writes
+         *     the same anchors at registration.
+         */
+        get: operations["getNodeHostAnchors"];
+        /**
+         * Replace a node's host-identity anchors (admin).
+         * @description Replaces the node's anchor set atomically: what is sent becomes the node's
+         *     whole anchor set and whatever was recorded before is dropped in the same
+         *     transaction, so no window exists in which the node is anchorless or still
+         *     trusts a superseded key. This is the repair path for a node that has NO
+         *     anchor — an Agent joining under a name nobody registered has its node
+         *     auto-created without one, and every session to it then aborts on host
+         *     verification. At least one of `hostCertificate` / `pinnedHostKey` is
+         *     required; an empty anchor set is rejected (`422`), because a node with no
+         *     anchor does not fall back to trust-on-first-use, it stops working. A
+         *     malformed key or certificate line is likewise a `422`. A full replace, so it
+         *     is idempotent by desired state. Refused (`409`) for a `removed` node:
+         *     removal is terminal, and a removed node is not repaired but replaced by a
+         *     fresh registration under a new name. Platform-RBAC gated (`node:enroll`) — the
+         *     same permission that writes these anchors during registration, because this
+         *     writes exactly what registration writes — and audited.
+         */
+        put: operations["replaceNodeHostAnchors"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/jit-requests": {
         parameters: {
             query?: never;
@@ -496,7 +563,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a JIT request (admin). */
+        /**
+         * Get a JIT request (admin).
+         * @description Returns one JIT request with its current state and the approval chain
+         *     snapshotted at submission — what an approver reads before deciding, and what
+         *     an auditor reads afterwards to see the chain as it stood, not as the policy
+         *     has since been edited. Platform-RBAC gated (`request:approve`).
+         */
         get: operations["getJitRequest"];
         put?: never;
         post?: never;
@@ -2596,13 +2669,16 @@ export interface components {
             connectorKind: "agent" | "agentless";
             /** @enum {string} */
             status: "pending" | "active" | "quarantined" | "removed";
-            /** @enum {string} */
+            /**
+             * @description Computed per request from `runtime.presence` and the node's host anchors — not stored, and never set by a client. `unhealthy` wins over everything below it and means the node has NO enrollment-anchored host identity: neither a host certificate nor a pinned host key, so it is enrolled but unusable, and the Gateway aborts every session to it rather than trust a host it cannot verify. Repair it with `PUT /v1/nodes/{nodeId}/host-anchors`. Otherwise, for an `agent` node: `healthy` while a Gateway holds its control channel (a presence heartbeat inside the staleness window), `unreachable` once a Gateway held it and the heartbeat has gone stale, and `unknown` when no Gateway has ever claimed it — the Agent has not joined yet. For an `agentless` node it is ALWAYS `unknown`, which reports nothing wrong: the Control Plane holds no continuous liveness signal for a node it dials on demand, and runs no probe of its own.
+             * @enum {string}
+             */
             health: "unknown" | "healthy" | "unhealthy" | "unreachable";
             address?: string;
             labels?: {
                 [key: string]: string;
             };
-            /** @description The Gateway currently owning the node's agent control channel (agent model); absent otherwise. */
+            /** @description The name of the Gateway currently holding the node's agent control channel, computed per request from a FRESH `runtime.presence` heartbeat — not stored. A heartbeat outside the staleness window means nobody owns the node, and the field is then absent; it is absent for an `agentless` node too, which has no owner because any Gateway dials it directly. Read-only and derived: a client never sets it. */
             owningGateway?: string;
             statusReason?: string;
             statusChangedBy?: string;
@@ -2616,6 +2692,49 @@ export interface components {
         /** Node List */
         NodeList: {
             nodes: components["schemas"]["NodeResource"][];
+        };
+        /**
+         * Node Host Anchors Request
+         * @description A node's replacement host-identity anchor set. At least one of
+         *     `hostCertificate` / `pinnedHostKey` is required; an empty set is a `422`,
+         *     because a node with no anchor is one the Gateway can never verify and never
+         *     TOFUs. Both may be sent: the host-CA path is authoritative and the pinned key
+         *     is the fallback for a node that presents a plain host key.
+         */
+        NodeHostAnchorsRequest: {
+            /** @description The node's host-CA-signed OpenSSH host certificate line, `<type> <base64>` (the primary host-identity anchor). */
+            hostCertificate?: string;
+            /** @description An explicitly pinned OpenSSH host public-key line, `<type> <base64>` (the fallback anchor when the node presents a plain host key). */
+            pinnedHostKey?: string;
+        };
+        /**
+         * Node Host Anchors
+         * @description A node's current host-identity anchors. `anchors` is empty for a node that has none — the state in which the Gateway aborts every session to it.
+         */
+        NodeHostAnchors: {
+            /** Format: uuid */
+            nodeId: string;
+            anchors: components["schemas"]["NodeHostAnchor"][];
+        };
+        /**
+         * Node Host Anchor
+         * @description One recorded host-identity anchor. Public material only — a certificate or a public key, never a private half.
+         */
+        NodeHostAnchor: {
+            /**
+             * @description Which verification path the anchor serves: `host_ca` is the node's host-CA-signed certificate (primary), `pinned_key` an explicitly pinned public key (the fallback when the node presents a plain host key).
+             * @enum {string}
+             */
+            source: "host_ca" | "pinned_key";
+            /** @description The anchor's OpenSSH key type (e.g. `ssh-ed25519`, `ecdsa-sha2-nistp256`). */
+            keyType: string;
+            /** @description The OpenSSH `SHA256:` fingerprint of the anchor's public key — what an operator compares against the key the node reports. Absent for a `host_ca` anchor recorded from a certificate line alone, whose trust comes from the CA signature rather than from a fingerprint comparison. */
+            fingerprint?: string;
+            /**
+             * Format: date-time
+             * @description When the anchor was recorded — node registration, or the last replace.
+             */
+            recordedAt?: string;
         };
         /**
          * JIT Request Submission
@@ -2825,9 +2944,16 @@ export interface components {
         /**
          * Platform Permission
          * @description A granular platform-RBAC permission from the closed vocabulary.
+         *
+         *     `metrics:read` gates exactly one thing — reading the Control Plane's metrics
+         *     endpoint — and is a member of its own rather than a reuse of `audit:read` on
+         *     purpose: the meters carry fleet-wide operational counts (live sessions,
+         *     authorization error rates, CA-signer activity, session-limit denials), and
+         *     granting a scraper `audit:read` to reach them would hand it the entire audit
+         *     trail to read a gauge.
          * @enum {string}
          */
-        PlatformPermission: "rbac:read" | "rbac:write" | "node:enroll" | "node:quarantine" | "node:remove" | "gateway:enroll" | "gateway:remove" | "ca:manage" | "ca:rotate" | "request:approve" | "recording:replay" | "recording:export" | "recording:delete" | "recording:key-manage" | "audit:read" | "user:manage" | "settings:write" | "lock:read" | "lock:write" | "breakglass:manage";
+        PlatformPermission: "rbac:read" | "rbac:write" | "node:enroll" | "node:quarantine" | "node:remove" | "gateway:enroll" | "gateway:remove" | "ca:manage" | "ca:rotate" | "request:approve" | "recording:replay" | "recording:export" | "recording:delete" | "recording:key-manage" | "audit:read" | "metrics:read" | "user:manage" | "settings:write" | "lock:read" | "lock:write" | "breakglass:manage";
         /**
          * Rule Effect
          * @enum {string}
@@ -2969,8 +3095,11 @@ export interface components {
             nodeLabelSelector: components["schemas"]["Selector"];
             sourceIpCondition?: components["schemas"]["Selector"];
             principals: string[];
-            /** Format: int32 */
-            ttlSeconds: number;
+            /**
+             * Format: int32
+             * @description The granted access's lifetime in seconds. REQUIRED when `effect` is `allow`, where it bounds the grant; omitting it there is a `422` naming this field, and there is no default — an unbounded grant is never inferred from silence. IGNORED when `effect` is `deny`, which grants nothing and so has no lifetime to bound; a deny is in force until the rule is changed.
+             */
+            ttlSeconds?: number;
             capabilities?: components["schemas"]["Capability"][];
             effect: components["schemas"]["Effect"];
         };
@@ -2980,8 +3109,11 @@ export interface components {
             nodeLabelSelector: components["schemas"]["Selector"];
             sourceIpCondition?: components["schemas"]["Selector"];
             principals: string[];
-            /** Format: int32 */
-            ttlSeconds: number;
+            /**
+             * Format: int32
+             * @description The granted access's lifetime in seconds. REQUIRED when `effect` is `allow`, where it bounds the grant; omitting it there is a `422` naming this field, and there is no default — an unbounded grant is never inferred from silence. IGNORED when `effect` is `deny`, which grants nothing and so has no lifetime to bound; a deny is in force until the rule is changed.
+             */
+            ttlSeconds?: number;
             capabilities?: components["schemas"]["Capability"][];
             effect: components["schemas"]["Effect"];
             /**
@@ -3993,8 +4125,9 @@ export interface operations {
     };
     listPins: {
         parameters: {
-            query: {
-                identity: string;
+            query?: {
+                /** @description Filter to one identity's pins; omit for every live pin. */
+                identity?: string;
             };
             header?: never;
             path?: never;
@@ -4465,6 +4598,70 @@ export interface operations {
             };
             403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNodeHostAnchors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                nodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The node's current anchors. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeHostAnchors"];
+                };
+            };
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    replaceNodeHostAnchors: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Optional client-generated idempotency key scoping a mutating request. A
+                 *     retry with the same key, method, and path returns the original response and
+                 *     never repeats the side effect; the same key with a different request body is
+                 *     a `422`. Keys are retained for a bounded TTL.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                nodeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NodeHostAnchorsRequest"];
+            };
+        };
+        responses: {
+            /** @description The node's anchors after the replace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeHostAnchors"];
+                };
+            };
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
