@@ -14,7 +14,7 @@ import {
 import { useCan } from '../../auth/AuthContext';
 import type { Capability, CapabilityDefResource } from '../../api/types';
 import { CrudScreen, OriginBadge, FormDialog } from './common';
-import { CAPABILITY_OPTIONS } from './helpers';
+import { CAPABILITY_OPTIONS } from '../../api/vocabulary';
 import {
   useCapabilityDefs,
   useCreateCapabilityDef,

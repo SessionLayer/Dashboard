@@ -23,19 +23,9 @@ import {
 } from '../../ui';
 import { useCan } from '../../auth/AuthContext';
 import type { Capability, Effect, RuleResource } from '../../api/types';
+import { CAPABILITY_OPTIONS } from '../../api/vocabulary';
 import { CrudList, MutationError, OriginBadge, jsonText } from './common';
 import { useCreateRule, useDeleteRule, useRules, useUpdateRule } from './hooks';
-
-const CAPABILITY_OPTIONS = enumOptions<Capability>({
-  shell: 'shell',
-  exec: 'exec',
-  sftp: 'sftp',
-  scp: 'scp',
-  port_forward_local: 'port_forward_local',
-  port_forward_remote: 'port_forward_remote',
-  agent_forward: 'agent_forward',
-  x11: 'x11',
-});
 
 const EFFECT_OPTIONS = enumOptions<Effect>({
   allow: 'allow',

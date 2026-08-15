@@ -1,24 +1,12 @@
 import { enumOptions, parseJsonObject } from '../../ui';
 import { ProblemError } from '../../api/problem';
 import type {
-  Capability,
   ConnectorKind,
   BreakglassAuthPath,
   JitApprovalLevel,
 } from '../../api/types';
 
 type ApprovalKind = NonNullable<JitApprovalLevel['kind']>;
-
-export const CAPABILITY_OPTIONS = enumOptions<Capability>({
-  shell: 'shell',
-  exec: 'exec',
-  sftp: 'sftp',
-  scp: 'scp',
-  port_forward_local: 'port_forward_local',
-  port_forward_remote: 'port_forward_remote',
-  agent_forward: 'agent_forward',
-  x11: 'x11',
-});
 
 export const CONNECTOR_OPTIONS = enumOptions<ConnectorKind>({
   agentless: 'agentless',

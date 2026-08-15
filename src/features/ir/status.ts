@@ -1,5 +1,4 @@
-import { enumOptions, type BadgeTone } from '../../ui';
-import type { Capability } from '../../api/types';
+import type { BadgeTone } from '../../ui';
 
 /** JIT state-machine values; the API sends these as a plain string. */
 export const JIT_STATES = [
@@ -42,14 +41,3 @@ export function isGrantedJit(state: string): boolean {
 export function reviewTone(status: string): BadgeTone {
   return status === 'reviewed' ? 'pass' : 'warn';
 }
-
-export const CAPABILITY_OPTIONS = enumOptions<Capability>({
-  shell: 'shell',
-  exec: 'exec',
-  sftp: 'sftp',
-  scp: 'scp',
-  port_forward_local: 'port_forward_local',
-  port_forward_remote: 'port_forward_remote',
-  agent_forward: 'agent_forward',
-  x11: 'x11',
-});
