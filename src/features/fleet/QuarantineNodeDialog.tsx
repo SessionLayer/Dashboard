@@ -5,17 +5,17 @@ import {
   NumberField,
   SelectField,
   TextareaField,
+  enumOptions,
 } from '../../ui';
 import type { NodeResource, QuarantineNodeRequest } from '../../api/types';
 import { useQuarantineNode } from './api';
 
 type ExistingSessions = NonNullable<QuarantineNodeRequest['existingSessions']>;
 
-const EXISTING_OPTIONS: readonly { value: ExistingSessions; label: string }[] =
-  [
-    { value: 'kill', label: 'Kill — tear down existing sessions at once' },
-    { value: 'drain', label: 'Drain — finish existing; no new channels' },
-  ];
+const EXISTING_OPTIONS = enumOptions<ExistingSessions>({
+  kill: 'Kill — tear down existing sessions at once',
+  drain: 'Drain — finish existing; no new channels',
+});
 
 export function QuarantineNodeDialog({
   node,

@@ -27,6 +27,7 @@ import {
   PageHeader,
   ProblemAlert,
   Time,
+  enumMembers,
 } from '../../ui';
 import { JitDecisionDialog, type DecisionKind } from '../ir/JitRequestList';
 import { isPendingJit } from '../ir/status';
@@ -403,20 +404,23 @@ function RecentTable<T>({
   );
 }
 
-const HEALTHS = ['healthy', 'unknown', 'unhealthy', 'unreachable'] as const;
-const HEALTH_LABEL: Record<(typeof HEALTHS)[number], string> = {
+// Keyed by the generated node vocabularies rather than by their own `as const`
+// arrays, so a value the contract adds fails the build here instead of being
+// dropped from the tally and quietly under-counting the fleet.
+const HEALTH_LABEL: Record<NodeResource['health'], string> = {
   healthy: 'Healthy',
   unknown: 'Unknown',
   unhealthy: 'Unhealthy',
   unreachable: 'Unreachable',
 };
-const STATUSES = ['active', 'pending', 'quarantined', 'removed'] as const;
-const STATUS_TONE: Record<(typeof STATUSES)[number], BadgeTone> = {
+const HEALTHS = enumMembers(HEALTH_LABEL);
+const STATUS_TONE: Record<NodeResource['status'], BadgeTone> = {
   active: 'pass',
   pending: 'info',
   quarantined: 'warn',
   removed: 'neutral',
 };
+const STATUSES = enumMembers(STATUS_TONE);
 
 function NodeHealthView({ nodes }: { nodes: NodeResource[] }) {
   const total = nodes.length;
@@ -515,6 +519,9 @@ function ControlPlaneSection() {
 
 // --- column definitions -----------------------------------------------------
 
+// Total by construction rather than exhaustive: `neutral` is the default for
+// standing access and for any model added later, which is the right tone to
+// guess wrong with. It is not an unfinished switch.
 function accessTone(model: AccessModel): BadgeTone {
   return model === 'breakglass'
     ? 'fail'

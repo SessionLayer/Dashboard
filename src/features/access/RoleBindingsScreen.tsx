@@ -14,6 +14,7 @@ import {
   SelectField,
   TextField,
   Time,
+  enumOptions,
   parseJsonObject,
   type Column,
 } from '../../ui';
@@ -28,10 +29,10 @@ import {
   useUpdateRoleBinding,
 } from './hooks';
 
-const SUBJECT_KIND_OPTIONS: readonly { value: SubjectKind; label: string }[] = [
-  { value: 'user', label: 'user' },
-  { value: 'group', label: 'group' },
-];
+const SUBJECT_KIND_OPTIONS = enumOptions<SubjectKind>({
+  user: 'user',
+  group: 'group',
+});
 
 /** A compact `k=v k2=v2` summary of the scope selector for the list column. */
 function scopeSummary(scope: Record<string, unknown> | undefined): string {

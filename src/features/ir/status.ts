@@ -1,4 +1,4 @@
-import type { BadgeTone } from '../../ui';
+import { enumOptions, type BadgeTone } from '../../ui';
 import type { Capability } from '../../api/types';
 
 /** JIT state-machine values; the API sends these as a plain string. */
@@ -43,16 +43,13 @@ export function reviewTone(status: string): BadgeTone {
   return status === 'reviewed' ? 'pass' : 'warn';
 }
 
-export const CAPABILITY_OPTIONS: readonly {
-  value: Capability;
-  label: string;
-}[] = [
-  { value: 'shell', label: 'shell' },
-  { value: 'exec', label: 'exec' },
-  { value: 'sftp', label: 'sftp' },
-  { value: 'scp', label: 'scp' },
-  { value: 'port_forward_local', label: 'port_forward_local' },
-  { value: 'port_forward_remote', label: 'port_forward_remote' },
-  { value: 'agent_forward', label: 'agent_forward' },
-  { value: 'x11', label: 'x11' },
-];
+export const CAPABILITY_OPTIONS = enumOptions<Capability>({
+  shell: 'shell',
+  exec: 'exec',
+  sftp: 'sftp',
+  scp: 'scp',
+  port_forward_local: 'port_forward_local',
+  port_forward_remote: 'port_forward_remote',
+  agent_forward: 'agent_forward',
+  x11: 'x11',
+});

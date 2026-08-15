@@ -13,6 +13,7 @@ import {
   SelectField,
   TextField,
   Time,
+  enumOptions,
   type BadgeTone,
   type Column,
 } from '../../ui';
@@ -34,18 +35,18 @@ import {
   useUpdateCa,
 } from './hooks';
 
-const CA_KIND_OPTIONS: readonly { value: CaKind; label: string }[] = [
-  { value: 'user', label: 'user' },
-  { value: 'session', label: 'session' },
-  { value: 'host', label: 'host' },
-];
+const CA_KIND_OPTIONS = enumOptions<CaKind>({
+  user: 'user',
+  session: 'session',
+  host: 'host',
+});
 
-const CA_BACKEND_OPTIONS: readonly { value: CaBackend; label: string }[] = [
-  { value: 'local', label: 'local' },
-  { value: 'aws_kms', label: 'aws_kms' },
-  { value: 'azure_keyvault', label: 'azure_keyvault' },
-  { value: 'vault', label: 'vault — no signer in this build' },
-];
+const CA_BACKEND_OPTIONS = enumOptions<CaBackend>({
+  local: 'local',
+  aws_kms: 'aws_kms',
+  azure_keyvault: 'azure_keyvault',
+  vault: 'vault — no signer in this build',
+});
 
 const BACKEND_HINT =
   'local, aws_kms and azure_keyvault have a signer; vault is an integration seam with no implementation of its own — picking it is accepted here but rejected by the server (422). A key service also has to be configured on the Control Plane, which this screen cannot see, so a backend offered here can still come back 422. All four stay listed because an existing CA, carried from an older deployment, may already be configured with one.';
@@ -125,6 +126,7 @@ function keyReferenceError(
   return undefined;
 }
 
+// DELIBERATELY NOT EXHAUSTIVE — do not "complete" this list against `CaAlgorithm`.
 // The enum is wider than what can be created: it also admits the values a row
 // may already carry from before the CP checked, and only the ECDSA curves can be
 // assembled into a signer. Offering the rest would be offering a 422.

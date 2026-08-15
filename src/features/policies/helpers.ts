@@ -1,4 +1,4 @@
-import { parseJsonObject } from '../../ui';
+import { enumOptions, parseJsonObject } from '../../ui';
 import { ProblemError } from '../../api/problem';
 import type {
   Capability,
@@ -9,43 +9,31 @@ import type {
 
 type ApprovalKind = NonNullable<JitApprovalLevel['kind']>;
 
-export const CAPABILITY_OPTIONS: readonly {
-  value: Capability;
-  label: string;
-}[] = [
-  { value: 'shell', label: 'shell' },
-  { value: 'exec', label: 'exec' },
-  { value: 'sftp', label: 'sftp' },
-  { value: 'scp', label: 'scp' },
-  { value: 'port_forward_local', label: 'port_forward_local' },
-  { value: 'port_forward_remote', label: 'port_forward_remote' },
-  { value: 'agent_forward', label: 'agent_forward' },
-  { value: 'x11', label: 'x11' },
-];
+export const CAPABILITY_OPTIONS = enumOptions<Capability>({
+  shell: 'shell',
+  exec: 'exec',
+  sftp: 'sftp',
+  scp: 'scp',
+  port_forward_local: 'port_forward_local',
+  port_forward_remote: 'port_forward_remote',
+  agent_forward: 'agent_forward',
+  x11: 'x11',
+});
 
-export const CONNECTOR_OPTIONS: readonly {
-  value: ConnectorKind;
-  label: string;
-}[] = [
-  { value: 'agentless', label: 'agentless' },
-  { value: 'agent', label: 'agent' },
-];
+export const CONNECTOR_OPTIONS = enumOptions<ConnectorKind>({
+  agentless: 'agentless',
+  agent: 'agent',
+});
 
-export const AUTH_PATH_OPTIONS: readonly {
-  value: BreakglassAuthPath;
-  label: string;
-}[] = [
-  { value: 'fido2', label: 'FIDO2 security key' },
-  { value: 'offline_code', label: 'Offline code' },
-];
+export const AUTH_PATH_OPTIONS = enumOptions<BreakglassAuthPath>({
+  fido2: 'FIDO2 security key',
+  offline_code: 'Offline code',
+});
 
-export const APPROVAL_KIND_OPTIONS: readonly {
-  value: ApprovalKind;
-  label: string;
-}[] = [
-  { value: 'email', label: 'Email' },
-  { value: 'oidc_group', label: 'OIDC group' },
-];
+export const APPROVAL_KIND_OPTIONS = enumOptions<ApprovalKind>({
+  email: 'Email',
+  oidc_group: 'OIDC group',
+});
 
 /** Guidance for an optimistic-concurrency conflict (stale `version`) on a save. */
 export function conflictHint(error: unknown): string | undefined {
