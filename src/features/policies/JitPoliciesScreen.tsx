@@ -29,12 +29,8 @@ import {
   FormDialog,
   SelectorSummary,
 } from './common';
-import {
-  CAPABILITY_OPTIONS,
-  APPROVAL_KIND_OPTIONS,
-  parseJsonState,
-  toJsonText,
-} from './helpers';
+import { APPROVAL_KIND_OPTIONS, parseJsonState, toJsonText } from './helpers';
+import { CAPABILITY_OPTIONS } from '../../api/vocabulary';
 import {
   useJitPolicies,
   useCreateJitPolicy,

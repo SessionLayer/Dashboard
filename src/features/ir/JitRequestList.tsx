@@ -33,13 +33,8 @@ import {
   useRevokeJit,
   useSubmitJitRequest,
 } from './hooks';
-import {
-  CAPABILITY_OPTIONS,
-  JIT_STATES,
-  isGrantedJit,
-  isPendingJit,
-  jitStateTone,
-} from './status';
+import { JIT_STATES, isGrantedJit, isPendingJit, jitStateTone } from './status';
+import { CAPABILITY_OPTIONS } from '../../api/vocabulary';
 import './ir.css';
 
 export type DecisionKind = 'approve' | 'deny' | 'revoke';

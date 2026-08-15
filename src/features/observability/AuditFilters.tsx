@@ -9,18 +9,8 @@ import {
   enumMembers,
 } from '../../ui';
 import type { AccessModel, Capability } from '../../api/types';
+import { CAPABILITIES } from '../../api/vocabulary';
 import type { AuditFilters as Filters } from './auditHooks';
-
-const CAPABILITIES = enumMembers<Capability>({
-  shell: true,
-  exec: true,
-  sftp: true,
-  scp: true,
-  port_forward_local: true,
-  port_forward_remote: true,
-  agent_forward: true,
-  x11: true,
-});
 
 const ACCESS_MODELS = enumMembers<AccessModel>({
   standing: true,
