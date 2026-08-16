@@ -19,28 +19,41 @@ import type { PlatformPermission, RoleResource } from '../../api/types';
 import { CrudList, MutationError, OriginBadge } from './common';
 import { useCreateRole, useDeleteRole, useRoles, useUpdateRole } from './hooks';
 
+// A Record rather than an array of options: the type then requires an entry for
+// every member of the closed vocabulary, so a permission added to the contract
+// fails the build here instead of silently becoming ungrantable. Key order is the
+// contract's own and is the order the checkbox grid presents.
+const PERMISSION_LABELS: Record<PlatformPermission, string> = {
+  'rbac:read': 'rbac:read',
+  'rbac:write': 'rbac:write',
+  'node:enroll': 'node:enroll',
+  'node:quarantine': 'node:quarantine',
+  'node:remove': 'node:remove',
+  'gateway:enroll': 'gateway:enroll',
+  'gateway:remove': 'gateway:remove',
+  'ca:manage': 'ca:manage',
+  'ca:rotate': 'ca:rotate',
+  'request:approve': 'request:approve',
+  'recording:replay': 'recording:replay',
+  'recording:export': 'recording:export',
+  'recording:delete': 'recording:delete',
+  'recording:key-manage': 'recording:key-manage',
+  'audit:read': 'audit:read',
+  'metrics:read': 'metrics:read',
+  'user:manage': 'user:manage',
+  'settings:write': 'settings:write',
+  'lock:read': 'lock:read',
+  'lock:write': 'lock:write',
+  'breakglass:manage': 'breakglass:manage',
+};
+
 const PERMISSION_OPTIONS: readonly {
   value: PlatformPermission;
   label: string;
-}[] = [
-  { value: 'rbac:read', label: 'rbac:read' },
-  { value: 'rbac:write', label: 'rbac:write' },
-  { value: 'node:enroll', label: 'node:enroll' },
-  { value: 'node:quarantine', label: 'node:quarantine' },
-  { value: 'node:remove', label: 'node:remove' },
-  { value: 'ca:manage', label: 'ca:manage' },
-  { value: 'ca:rotate', label: 'ca:rotate' },
-  { value: 'request:approve', label: 'request:approve' },
-  { value: 'recording:replay', label: 'recording:replay' },
-  { value: 'recording:export', label: 'recording:export' },
-  { value: 'recording:delete', label: 'recording:delete' },
-  { value: 'audit:read', label: 'audit:read' },
-  { value: 'user:manage', label: 'user:manage' },
-  { value: 'settings:write', label: 'settings:write' },
-  { value: 'lock:read', label: 'lock:read' },
-  { value: 'lock:write', label: 'lock:write' },
-  { value: 'breakglass:manage', label: 'breakglass:manage' },
-];
+}[] = (Object.keys(PERMISSION_LABELS) as PlatformPermission[]).map((value) => ({
+  value,
+  label: PERMISSION_LABELS[value],
+}));
 
 type Dialog =
   | { kind: 'create' }
