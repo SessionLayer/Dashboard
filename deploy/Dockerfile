@@ -47,7 +47,7 @@ RUN grep -q '__CP_ORIGIN__ __OIDC_ORIGIN__ __OBJECT_STORE_ORIGIN__' deploy/secur
       deploy/security-headers.conf > /security-headers.conf.template \
  && grep -q '${SL_CSP_CONNECT_SRC}' /security-headers.conf.template
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6 AS serve
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:334d92979f15aaecd5dd50af5105e1230e2bb70765d45b1e2f964e7c5eda81c3 AS serve
 
 ARG VERSION=0.0.0-dev
 ARG REVISION=unknown
