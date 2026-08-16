@@ -9,9 +9,6 @@ import { parseAsciicast, type Asciicast } from '../../crypto/asciicast';
 import { unsealRecording } from '../../crypto/slrec';
 import type { SignedUrl } from '../../api/types';
 
-/**
- * Fails closed on silent truncation (hash-chain verification is deferred).
- */
 const OBJECT_FETCH_TIMEOUT_MS = 60_000;
 
 async function fetchObjectBytes(
@@ -43,6 +40,9 @@ async function fetchObjectBytes(
     }
     throw e;
   }
+  // The only integrity guard on the fetched object: the seal detects tampering
+  // within a frame, but a truncated tail decrypts cleanly, so a short object is
+  // caught here or not at all (hash-chain verification is deferred).
   if (expectedSize !== undefined && bytes.length !== expectedSize) {
     throw new Error(
       `Recording integrity check failed: object is ${String(bytes.length)} bytes, expected ${String(expectedSize)} (truncated or tampered).`,
