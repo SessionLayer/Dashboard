@@ -23,7 +23,6 @@ export const APPROVAL_KIND_OPTIONS = enumOptions<ApprovalKind>({
   oidc_group: 'OIDC group',
 });
 
-/** Guidance for an optimistic-concurrency conflict (stale `version`) on a save. */
 export function conflictHint(error: unknown): string | undefined {
   return error instanceof ProblemError && error.isConflict
     ? 'This record changed since you opened it — close and reopen to load the latest, then retry.'
@@ -35,7 +34,6 @@ export interface JsonState {
   value: Record<string, unknown> | undefined;
 }
 
-/** Parse a JSON-object editor's text, distinguishing empty (omit) from invalid. */
 export function parseJsonState(text: string): JsonState {
   try {
     return { ok: true, value: parseJsonObject(text) };
@@ -44,7 +42,6 @@ export function parseJsonState(text: string): JsonState {
   }
 }
 
-/** Pretty-print an object for a JSON editor, or empty string for none. */
 export function toJsonText(value: Record<string, unknown> | undefined): string {
   return value === undefined ? '' : JSON.stringify(value, null, 2);
 }

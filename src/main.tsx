@@ -12,8 +12,6 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Retry once, but never a 4xx (auth/permission/not-found/validation are
-      // not transient — retrying doubles the burst and delays the real error).
       retry: (failureCount, error) => {
         if (
           error instanceof ProblemError &&

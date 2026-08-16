@@ -10,8 +10,6 @@ import {
 import type { CaKind, CaRotationState } from '../../api/types';
 import { useCaPublicKey } from './hooks';
 
-// Session first: it is the key a node install needs in `TrustedUserCAKeys`, and
-// this panel exists for that lookup. Key order is the presented order.
 const SSH_KINDS = enumMembers<CaKind>({
   session: true,
   user: true,
@@ -26,11 +24,6 @@ const ROTATION_TONE: Record<CaRotationState, BadgeTone> = {
 };
 
 /**
- * The SSH CA public keys, in the form a node install needs them. Installing a
- * node means putting the session CA's public key into `TrustedUserCAKeys`, and
- * this is where an operator looks for it — the alternative was reading it out
- * of the database as its owner.
- *
  * Public verification material only. The internal mTLS CA is deliberately absent:
  * it is not a member of this collection and its trust anchor has its own export
  * beside the Gateway enrollment tokens.

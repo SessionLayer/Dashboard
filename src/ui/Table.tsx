@@ -17,11 +17,6 @@ export interface DataTableProps<T> {
   onRowClick?: (row: T) => void;
 }
 
-/**
- * The table primitive. Always wrapped in an `overflow-x:auto` container so wide
- * tables scroll within themselves and never push a horizontal scrollbar onto the
- * page body (a11y/responsive rule). Every table carries a caption.
- */
 export function DataTable<T>({
   columns,
   rows,

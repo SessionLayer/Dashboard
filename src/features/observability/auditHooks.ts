@@ -11,7 +11,6 @@ import type {
   Capability,
 } from '../../api/types';
 
-/** All the search dimensions the `/v1/audit-events` contract accepts. */
 export interface AuditFilters {
   actor?: string;
   subject?: string;
@@ -33,7 +32,6 @@ type AuditQuery = Omit<AuditFilters, 'capability' | 'accessModel'> & {
   accessModel?: AccessModel;
 };
 
-/** RFC-3339-ise a `datetime-local` value; leave anything else untouched. */
 function toRfc3339(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const ms = Date.parse(value);

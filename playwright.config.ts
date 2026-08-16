@@ -1,8 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Single headless smoke against the built artifact. The Control Plane is NOT
-// live: the spec intercepts `GET /v1/version` at the network layer
-// (page.route) so the smoke needs no backend. See e2e/smoke.spec.ts.
 const PORT = 4173;
 const BASE_URL = `http://localhost:${String(PORT)}`;
 
@@ -23,10 +20,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // Serve the production build, mirroring what we actually ship. The build runs
-  // here too so `npm run test:e2e` is self-contained; in the gate it runs after
-  // `npm run build`, and locally an already-running preview is reused. The OIDC
-  // vars are baked in so the auth-flow smoke can drive a route-mocked IdP.
   webServer: {
     command: 'npm run build && npm run preview',
     url: BASE_URL,

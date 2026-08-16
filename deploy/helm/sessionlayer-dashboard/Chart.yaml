@@ -2,8 +2,6 @@ apiVersion: v2
 name: sessionlayer-dashboard
 description: SessionLayer Dashboard, the operator console served as a static bundle behind nginx.
 type: application
-# Versions the chart, not the component. appVersion tracks the Dashboard
-# release the default image tag resolves to.
 version: 0.1.0
 appVersion: "v0.0.2"
 # policy/v1 PodDisruptionBudget.

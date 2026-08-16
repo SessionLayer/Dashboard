@@ -1,5 +1,3 @@
-/* Incident-response screens — tab strip + compact inline row actions. */
-
 .ir-tabs {
   display: flex;
   flex-wrap: wrap;

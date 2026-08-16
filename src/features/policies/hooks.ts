@@ -22,7 +22,6 @@ import type {
   UpdateSessionLimitPolicyRequest,
 } from '../../api/types';
 
-// ---------------------------------------------------------------- capability-defs
 export function useCapabilityDefs() {
   return useCursorList<CapabilityDefResource>(
     resourceKey('capability-defs'),
@@ -87,7 +86,6 @@ export function useDeleteCapabilityDef() {
   });
 }
 
-// -------------------------------------------------------------------- jit-policies
 export function useJitPolicies() {
   return useCursorList<JitPolicyResource>(
     resourceKey('jit-policies'),
@@ -149,7 +147,6 @@ export function useDeleteJitPolicy() {
   });
 }
 
-// ------------------------------------------------------------- breakglass-policies
 export function useBreakglassPolicies() {
   return useCursorList<BreakglassPolicyResource>(
     resourceKey('breakglass-policies'),
@@ -216,7 +213,6 @@ export function useDeleteBreakglassPolicy() {
   });
 }
 
-// ------------------------------------------------------------------- node-policies
 export function useNodePolicies() {
   return useCursorList<NodePolicyResource>(
     resourceKey('node-policies'),
@@ -278,7 +274,6 @@ export function useDeleteNodePolicy() {
   });
 }
 
-// ------------------------------------------------------------ session-limit-policies
 export function useSessionLimitPolicies() {
   return useCursorList<SessionLimitPolicyResource>(
     resourceKey('session-limit-policies'),

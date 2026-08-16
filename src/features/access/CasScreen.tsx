@@ -51,13 +51,6 @@ const CA_BACKEND_OPTIONS = enumOptions<CaBackend>({
 const BACKEND_HINT =
   'local, aws_kms and azure_keyvault have a signer; vault is an integration seam with no implementation of its own — picking it is accepted here but rejected by the server (422). A key service also has to be configured on the Control Plane, which this screen cannot see, so a backend offered here can still come back 422. All four stay listed because an existing CA, carried from an older deployment, may already be configured with one.';
 
-/**
- * Shape-only check for a Key Vault key identifier
- * (`https://<vault>/keys/<name>/<version>`). The Control Plane is the authority
- * on the exact rule (including the vault allow-list, which this UI has no way
- * to know) — this exists only to catch an obviously wrong reference before a
- * round trip, not to replace the server's `422`.
- */
 function looksLikeVersionedKeyVaultReference(ref: string): boolean {
   let url: URL;
   try {
@@ -82,23 +75,12 @@ function looksLikeVersionedKeyVaultReference(ref: string): boolean {
   return name !== '.' && name !== '..' && version !== '.' && version !== '..';
 }
 
-/**
- * Shape-only check for a KMS key ARN
- * (`arn:<partition>:kms:<region>:<account>:key/<key-id>`). An alias ARN has the
- * right shape and the wrong meaning, so it is called out by name rather than
- * left to fail the generic pattern: `kms:UpdateAlias` repoints an alias with
- * nothing visible to the Control Plane, which would swap the signing key under a
- * CA whose public half every node already trusts. The Control Plane is still the
- * authority — it also pins the ARN to the region and account it is configured
- * for, which this UI has no way to know.
- */
 function looksLikeKmsKeyArn(ref: string): boolean {
   return /^arn:[a-z0-9-]+:kms:[a-z0-9-]+:\d{12}:key\/(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})$/.test(
     ref,
   );
 }
 
-/** Client-side hint only; the server's own `422` message is what's authoritative. */
 function keyReferenceError(
   backend: CaBackend,
   keyReference: string,
@@ -146,9 +128,8 @@ const ROTATION_TONE: Record<CaRotationState, BadgeTone> = {
   expired: 'fail',
 };
 
-// Backend, key reference and algorithm describe the CA's key, and an active
-// CA's key cannot be changed by an edit — the write is rejected (409). Rotate
-// is the only path that changes a key, so that's what's offered instead.
+// An active CA's key cannot be changed by an edit — the write is rejected
+// (409). Rotate is the only path that changes a key.
 const EDIT_BLOCKED_ON_ACTIVE =
   'This CA is active. Its backend, key reference and algorithm describe its key, and changing them is a rotation, not an edit — use Rotate.';
 
@@ -296,14 +277,10 @@ function RotateCaBody({
   onDone: () => void;
 }) {
   const rotate = useRotateCa();
-  // '' means "inherit the active CA" — omitted from the request.
   const [algorithm, setAlgorithm] = useState<CaAlgorithm | ''>('');
   const [backend, setBackend] = useState<CaBackend | ''>('');
   const [keyReference, setKeyReference] = useState('');
 
-  // What this rotation will actually run in, whether kept or overridden — this
-  // is what decides which backend's key-reference rule applies, not the raw
-  // dropdown value.
   const resolvedBackend = backend === '' ? row.backend : backend;
   const keyReferenceProblem = keyReferenceError(resolvedBackend, keyReference);
   const keyServiceBackend =

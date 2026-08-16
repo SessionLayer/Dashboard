@@ -16,11 +16,6 @@ import { formatBytes } from './format';
 import { statusTone, wormTone } from './badges';
 import { useDeleteRecording, useSetLegalHold } from './recordingHooks';
 
-/**
- * Recording metadata + the privileged governance actions (legal hold, governance
- * delete). Compliance-mode or held recordings are refused server-side (409),
- * surfaced inline via the confirm dialog.
- */
 export function RecordingDetails({
   recording,
   onClose,

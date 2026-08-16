@@ -15,7 +15,6 @@ import { BreakglassPoliciesScreen } from './BreakglassPoliciesScreen';
 import { NodePoliciesScreen } from './NodePoliciesScreen';
 import { SessionLimitPoliciesScreen } from './SessionLimitPoliciesScreen';
 
-/** The five config-policy routes, wired centrally by the shared router. */
 export function createPoliciesRoutes(parent: AnyRoute): AnyRoute[] {
   return [
     createRoute({
@@ -114,10 +113,6 @@ const demoSessionLimitPolicies: SessionLimitPolicyResource[] = [
   },
 ];
 
-/**
- * Optional demo/E2E handlers so the full app renders content without a live
- * Control Plane. Unit tests define their own handlers via `server.use(...)`.
- */
 export const policiesHandlers: RequestHandler[] = [
   http.get(cp('/v1/capability-defs'), () =>
     HttpResponse.json({ items: demoCapabilityDefs }),

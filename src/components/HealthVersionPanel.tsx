@@ -12,10 +12,6 @@ const HEALTH_LABEL: Record<HealthStatus['status'], string> = {
   fail: 'Unhealthy',
 };
 
-/**
- * Exercises the typed client against `GET /v1/version` and `GET /v1/healthz`, proving
- * the contract-first data path end to end.
- */
 export function HealthVersionPanel() {
   const version = useQuery(versionQueryOptions);
   const health = useQuery(healthQueryOptions);

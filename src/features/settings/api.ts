@@ -13,7 +13,6 @@ import type {
 const SETTINGS_KEY = resourceKey('operatorSettings');
 const RECORDING_KEY = resourceKey('recordingCustomerKey');
 
-/** The singleton settings row — addressed by path, so no id and no list. */
 export function useOperatorSettings() {
   return useQuery({
     queryKey: SETTINGS_KEY,

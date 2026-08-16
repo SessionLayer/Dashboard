@@ -5,7 +5,6 @@ import { CP_BASE_URL } from '../../api/client';
 import type { OperatorSettings, RecordingCustomerKey } from '../../api/types';
 import { OperatorSettingsScreen } from './OperatorSettingsScreen';
 
-/** The operator-settings singleton: one path, no collection. */
 export function createSettingsRoutes(parent: AnyRoute): AnyRoute[] {
   return [
     createRoute({
@@ -37,10 +36,6 @@ const demoKey: RecordingCustomerKey = {
   sealAlgorithm: 'ecies_p256',
 };
 
-/**
- * Optional demo/E2E handlers so the full app renders content without a live
- * Control Plane. Unit tests define their own handlers via `server.use(...)`.
- */
 export const settingsHandlers: RequestHandler[] = [
   http.get(cp('/v1/operator-settings'), () => HttpResponse.json(demoSettings)),
   http.get(cp('/v1/operator-settings/recording-customer-key'), () =>

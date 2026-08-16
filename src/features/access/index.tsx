@@ -17,7 +17,6 @@ import { RolesScreen } from './RolesScreen';
 import { RulesScreen } from './RulesScreen';
 import { ServiceAccountsScreen } from './ServiceAccountsScreen';
 
-/** Registers the five Access & RBAC screens under the authed layout. */
 export function createAccessRoutes(parent: AnyRoute): AnyRoute[] {
   return [
     createRoute({
@@ -47,8 +46,6 @@ export function createAccessRoutes(parent: AnyRoute): AnyRoute[] {
     }),
   ];
 }
-
-// ── Demo MSW handlers (full-app E2E / offline demo only) ─────────────────────
 
 const u = (n: number): string =>
   `00000000-0000-0000-0000-0000000000${String(n).padStart(2, '0')}`;

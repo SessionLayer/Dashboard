@@ -65,8 +65,6 @@ test('OIDC authorization-code + PKCE flow yields an in-memory bearer', async ({
 }) => {
   await stubControlPlane(page);
 
-  // Mock the IdP: the authorize redirect bounces back to /auth/callback echoing
-  // the PKCE `state`; the token endpoint returns the ID token.
   await page.route('**/authorize?*', (route) => {
     const state =
       new URL(route.request().url()).searchParams.get('state') ?? '';

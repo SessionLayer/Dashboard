@@ -1,8 +1,3 @@
-/**
- * A credential-bearing endpoint MUST be https:// (OIDC bearer, PKCE exchange on wire).
- */
-
-/** True for loopback hosts (the local-dev exemption). */
 export function isLoopbackHost(hostname: string): boolean {
   return (
     hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'

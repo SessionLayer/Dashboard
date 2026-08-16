@@ -13,14 +13,6 @@ import {
   PLAINTEXT_UTF8,
 } from './slrecGolden';
 
-// Cross-language conformance: `slrec.test.ts` only ever exercises
-// production `unsealRecording` against objects sealed by the TEST-ONLY TS
-// mirror (`../test/recordingFixture.ts`) -- the production decryptor has
-// never before been run against a Rust-sealed object. `slrecGolden.ts` is
-// sealed ONCE by the real Gateway `seal_to_customer`/`seal_frame` path
-// (see `Gateway/gateway-core/tests/slrec_conformance.rs`); this file
-// decrypts it through the production path here, closing that gap.
-
 describe('SLREC1 cross-language conformance', () => {
   it('decrypts the Rust-sealed golden object via the production TS path', async () => {
     const object = hexToBytes(OBJECT_HEX);
@@ -46,8 +38,6 @@ describe('SLREC1 cross-language conformance', () => {
     const key = await importCustomerPrivateKey(
       hexToBytes(CUSTOMER_PRIVATE_KEY_PKCS8_DER_HEX),
     );
-    // A flipped wrapped-key byte must be rejected outright, not silently
-    // unwrap to a wrong data key that then "decrypts" frames into garbage.
     await expect(unsealRecording(object, key)).rejects.toMatchObject({
       code: 'decrypt-failed',
     });
@@ -56,8 +46,7 @@ describe('SLREC1 cross-language conformance', () => {
   it("rejects the golden object with a flipped byte in a frame's ciphertext", async () => {
     const object = hexToBytes(OBJECT_HEX);
     // The last byte of the object always falls inside the final frame's
-    // ciphertext/tag (mirrors the Rust-side `golden_object_tamper_is_rejected`
-    // and the existing `slrec.test.ts` tamper test).
+    // ciphertext/tag.
     const last = object.length - 1;
     object[last] = ((object[last] ?? 0) ^ 0x01) & 0xff;
 

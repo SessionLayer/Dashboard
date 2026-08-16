@@ -1,9 +1,3 @@
-/**
- * Parses asciicast output into a cell grid; unknown sequences are discarded, never
- * emitted as literal bytes. Security: colors are palette entries or derived rgb(),
- * never copied from recording; cell text is escaped (no innerHTML).
- */
-
 import type { Asciicast, CastEvent } from '../../crypto/asciicast';
 
 export interface CellStyle {
@@ -33,7 +27,6 @@ export interface TerminalSnapshot {
   cursor: { row: number; col: number };
 }
 
-// The 16 base ANSI colours (xterm palette). Fixed strings — never recording data.
 const BASE_COLORS: readonly string[] = [
   '#000000',
   '#cd3131',
@@ -182,7 +175,7 @@ export class Terminal {
       case ')':
       case '*':
       case '+':
-        this.state = 'charset'; // consume the one designator byte, then resume
+        this.state = 'charset';
         return;
       default:
         this.state = 'ground';
@@ -191,10 +184,10 @@ export class Terminal {
 
   private csi(ch: string, code: number): void {
     if (code >= 0x30 && code <= 0x3f) {
-      this.params += ch; // parameter + private-marker bytes
+      this.params += ch;
       return;
     }
-    if (code >= 0x20 && code <= 0x2f) return; // intermediates: ignored
+    if (code >= 0x20 && code <= 0x2f) return;
     if (code >= 0x40 && code <= 0x7e) {
       this.dispatch(ch);
     }
@@ -263,7 +256,7 @@ export class Terminal {
         this.cCol = clamp(this.saved.col, 0, this.cols - 1);
         return;
       default:
-        return; // h/l modes, scroll region, etc.: safely ignored
+        return;
     }
   }
 
@@ -415,8 +408,6 @@ function isDefault(s: CellStyle): boolean {
 }
 
 function coalesce(row: Cell[]): Run[] {
-  // Drop trailing blank cells (unstyled spaces) so the DOM row stays compact; a
-  // styled space (e.g. an inverse background) is content and is kept.
   let end = row.length;
   while (end > 0) {
     const c = row[end - 1];

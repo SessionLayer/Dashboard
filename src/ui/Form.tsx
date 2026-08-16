@@ -274,7 +274,6 @@ export function CheckboxField({
   );
 }
 
-/** A chip editor for a string array (principals, groups, approver emails). */
 export function TagField({
   label,
   values,
@@ -340,7 +339,6 @@ export function TagField({
   );
 }
 
-/** A checkbox group over a fixed enum (capabilities, permissions). */
 export function EnumMultiField<T extends string>({
   label,
   options,
@@ -379,7 +377,6 @@ export function EnumMultiField<T extends string>({
   );
 }
 
-/** Parse a JSON object string; returns `undefined` on empty and throws on invalid. */
 export function parseJsonObject(
   text: string,
 ): Record<string, unknown> | undefined {
@@ -392,7 +389,6 @@ export function parseJsonObject(
   return parsed as Record<string, unknown>;
 }
 
-/** A monospace JSON editor (selectors are shape-validated jsonb). Validates on change. */
 export function JsonField({
   label,
   value,

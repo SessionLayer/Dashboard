@@ -21,11 +21,6 @@ function relative(from: number, now: number): string {
   return 'just now';
 }
 
-/**
- * A timestamp shown as a human-relative label with the exact UTC value in the
- * `title`/`dateTime` (audit timestamps are UTC). Invalid/absent
- * values render an em dash rather than "Invalid Date".
- */
 export function Time({ value }: { value: string | undefined | null }) {
   // Snapshot the clock once per mount: reading Date.now() during render is
   // impure. This is a point-in-time relative label, not a ticking one.

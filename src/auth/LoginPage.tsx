@@ -4,11 +4,6 @@ import { useState } from 'react';
 import { Button } from '../ui/Button';
 import { useAuth } from './AuthContext';
 
-/**
- * The unauthenticated landing. Starts the OIDC authorization-code + PKCE flow
- * (full-page redirect to the IdP). Already-authenticated visitors are sent to the
- * dashboard. No credentials are ever entered here — the IdP owns authentication.
- */
 export function LoginPage() {
   const { status, configured, login } = useAuth();
   const [error, setError] = useState<string | undefined>(undefined);

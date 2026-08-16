@@ -14,10 +14,7 @@ import { NotFound } from './layout/NotFound';
 import { RouteError } from './components/RouteError';
 
 // Code-based route tree (no file-based router plugin), so the only generated &
-// drift-checked artifact stays the API client. Public routes (`/login`,
-// `/auth/callback`) sit at the root; everything else nests under a pathless
-// `authed` layout route (guard + shell). Feature screen-groups (Parts B–F) are
-// composed in via `buildFeatureRoutes` at integration.
+// drift-checked artifact stays the API client.
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
 const loginRoute = createRoute({

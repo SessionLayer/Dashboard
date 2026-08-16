@@ -32,8 +32,6 @@ describe('RecordingsScreen', () => {
     });
     expect(await screen.findByText('alice')).toBeInTheDocument();
     expect(screen.getByText('finalized')).toBeInTheDocument();
-    // "Created" (createdAt) is distinct from "Started" (session start) —
-    // both real contract fields, both shown.
     expect(screen.getByText('Created')).toBeInTheDocument();
     expect(screen.getByTitle('2026-07-01T00:05:00.000Z')).toBeInTheDocument();
   });
@@ -73,7 +71,7 @@ describe('RecordingsScreen', () => {
     server.use(http.get(cp('/v1/recordings'), () => page([REC])));
     renderWithProviders(<RecordingsScreen />, {
       authenticated: true,
-      permissions: ['audit:read'], // known, but not recording:*
+      permissions: ['audit:read'],
     });
     await screen.findByText('alice');
     expect(screen.queryByRole('button', { name: 'Replay' })).toBeNull();

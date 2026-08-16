@@ -1,6 +1,5 @@
 import type { BadgeTone } from '../../ui';
 
-/** JIT state-machine values; the API sends these as a plain string. */
 export const JIT_STATES = [
   'REQUESTED',
   'PENDING_APPROVAL',
@@ -28,12 +27,10 @@ export function jitStateTone(state: string): BadgeTone {
 const PENDING = new Set(['REQUESTED', 'PENDING_APPROVAL']);
 const GRANTED = new Set(['APPROVED', 'ACTIVE']);
 
-/** A request awaiting a decision — approve/deny are candidate actions. */
 export function isPendingJit(state: string): boolean {
   return PENDING.has(state);
 }
 
-/** A live/approved grant — revoke is a candidate action. */
 export function isGrantedJit(state: string): boolean {
   return GRANTED.has(state);
 }

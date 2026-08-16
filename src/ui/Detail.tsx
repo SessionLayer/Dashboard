@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-/** A key/value detail list for resource detail panels (`dl`). */
 export function DetailList({ children }: { children: ReactNode }) {
   return <dl className="detail-list">{children}</dl>;
 }
@@ -20,7 +19,6 @@ export function Detail({
   );
 }
 
-/** Render a `string->string` label map as chips (node labels, tags). */
 export function LabelMapView({
   labels,
 }: {
@@ -40,7 +38,6 @@ export function LabelMapView({
   );
 }
 
-/** Pretty-print a JSON value read-only (selectors, audit detail). Escaped text only. */
 export function CodeBlock({ value }: { value: unknown }) {
   if (value === undefined || value === null) {
     return <span className="muted">—</span>;

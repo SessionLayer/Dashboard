@@ -76,12 +76,10 @@ describe('recording replay (client-side decrypt)', () => {
     await loadKeyIntoScreen(privateKeyPem);
     fireEvent.click(await screen.findByRole('button', { name: 'Replay' }));
 
-    // The file-transfer marker is surfaced on the player timeline.
     expect(
       await screen.findByText('sftp: GET /etc/hosts (312 bytes)'),
     ).toBeInTheDocument();
 
-    // Seek to the end and assert the decrypted OUTPUT is rendered in the terminal.
     fireEvent.change(screen.getByRole('slider', { name: 'Seek recording' }), {
       target: { value: '999' },
     });
@@ -120,7 +118,6 @@ describe('recording replay (client-side decrypt)', () => {
   it('NEVER sends the private key to the platform and NEVER persists it', async () => {
     const { spki, privateKeyPem } = await generateCustomerKeypair();
     const object = await sealAsciicast(spki, CAST);
-    // A distinctive slice of the key material to search outgoing traffic for.
     const secretMarker = privateKeyPem
       .replace(/-----[^-]+-----/g, '')
       .replace(/\s+/g, '')
@@ -165,8 +162,6 @@ describe('recording replay (client-side decrypt)', () => {
       expect(text).not.toContain(secretMarker);
       expect(text).not.toContain('PRIVATE KEY');
     }
-    // No request even reached the object store carrying key bytes; and nothing
-    // about the key was written to web storage.
     expect(captured).toContain(OBJ_URL);
     const dumpStorage = (s: Storage): string => {
       let out = '';
@@ -287,9 +282,6 @@ describe('recording replay (client-side decrypt)', () => {
       http.post(cp('/v1/recordings/:id/export'), () =>
         ok({ url: OBJ_URL, method: 'GET', expiresAt: '2030-01-01T00:00:00Z' }),
       ),
-      // The object store hangs well past the (short, injected) download bound; the
-      // AbortSignal.timeout tears the request down → a clear timeout error, not a
-      // spinner-forever leak.
       http.get(OBJ_URL, async () => {
         await delay(2000);
         return HttpResponse.arrayBuffer(new ArrayBuffer(0));

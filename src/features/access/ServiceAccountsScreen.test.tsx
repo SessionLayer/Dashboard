@@ -204,8 +204,6 @@ describe('ServiceAccountsScreen', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Revoke' }));
 
-    // Revoke is irreversible (denies new sessions immediately) — it must not
-    // fire until the operator confirms in the dialog.
     const dialog = await screen.findByRole('dialog', {
       name: 'Revoke this credential?',
     });

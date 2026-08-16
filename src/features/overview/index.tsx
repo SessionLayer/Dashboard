@@ -7,11 +7,6 @@ export { OverviewScreen };
 
 const url = (path: string) => `${CP_BASE_URL}${path}`;
 
-/**
- * Optional MSW handlers for the full-app demo/E2E build (the lead wires the
- * component into the index `/` route directly). Unit tests register their own
- * handlers via `server.use(...)`.
- */
 export const overviewHandlers: RequestHandler[] = [
   http.get(url('/v1/sessions'), () =>
     HttpResponse.json({

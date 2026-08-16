@@ -19,8 +19,6 @@ import { AccessModelBadge, CapabilityBadges } from './badges';
 import { useSessions, type SessionFilters } from './api';
 import { SessionDetailDialog, TerminateSessionDialog } from './SessionDialogs';
 
-/** `startedAt`→`endedAt` (or `now` for a live session) as a compact clock —
- *  purely derived from the two real timestamps the API already returns. */
 function formatDuration(
   startedAt: string,
   endedAt: string | undefined,
@@ -41,8 +39,6 @@ function formatDuration(
 
 type AccessFilter = AccessModel | 'all';
 
-// `all` is a filter sentinel, not a contract value; the rest are the generated
-// vocabulary and are exhaustive over it.
 const ACCESS_OPTIONS = enumOptions<AccessFilter>({
   all: 'All access models',
   standing: 'Standing',

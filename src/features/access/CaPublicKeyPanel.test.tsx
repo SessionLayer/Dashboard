@@ -47,8 +47,6 @@ describe('CaPublicKeyPanel', () => {
       screen.getByText('SHA256:fingerprint-of-the-host-ca'),
     ).toBeInTheDocument();
 
-    // The authorized-key line is what an operator pastes into TrustedUserCAKeys,
-    // so it has to be present verbatim and copyable, not summarised.
     expect(
       screen.getByLabelText('session CA OpenSSH public key'),
     ).toHaveTextContent(`${OPENSSH_LINE}-session`);
@@ -60,8 +58,6 @@ describe('CaPublicKeyPanel', () => {
     ).toHaveLength(3);
   });
 
-  // The internal mTLS CA is not a member of this collection — it has its own
-  // trust-anchor export beside the Gateway enrollment tokens.
   it('does not offer the internal mTLS CA here', async () => {
     serveCas();
     renderWithProviders(<CasScreen />, {
@@ -82,7 +78,6 @@ describe('CaPublicKeyPanel', () => {
     expect(screen.queryByText('CA public keys')).not.toBeInTheDocument();
   });
 
-  // One kind having no CA must not take the other two down with it.
   it('reports a missing kind inline and still exports the others', async () => {
     server.use(
       http.get(cp('/v1/cas'), () => page([])),

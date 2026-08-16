@@ -127,10 +127,6 @@ describe('RolesScreen', () => {
     }
   });
 
-  // Called out by name because the Dashboard gates its own customer recording-key
-  // panel on this permission: if the role editor cannot offer it, no admin can be
-  // granted it, and the key that strict recording requires cannot be provisioned
-  // through this UI at all.
   it('grants recording:key-manage', async () => {
     let body: Record<string, unknown> | undefined;
     server.use(

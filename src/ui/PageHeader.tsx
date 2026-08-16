@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-/** Standard screen header: title, optional description, and right-aligned actions. */
 export function PageHeader({
   title,
   description,

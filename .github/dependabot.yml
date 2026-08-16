@@ -1,9 +1,5 @@
-# Dependabot keeps dependencies current and surfaces GitHub security advisories
-# as pull requests. It complements the in-CI `npm audit` gate rather than
-# replacing it. Update PRs run through the normal `gate` CI check before auto-merge.
 version: 2
 updates:
-  # npm dependencies (package.json / package-lock.json at the repo root).
   - package-ecosystem: npm
     directory: '/'
     schedule:
@@ -15,7 +11,6 @@ updates:
     commit-message:
       prefix: deps
 
-  # GitHub Actions used by .github/workflows (kept SHA-pinned).
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
@@ -26,8 +21,6 @@ updates:
     commit-message:
       prefix: ci
 
-  # Base images in deploy/Dockerfile (pinned by digest; Dependabot bumps the
-  # digest and the tag comment together).
   - package-ecosystem: docker
     directory: '/deploy'
     schedule:

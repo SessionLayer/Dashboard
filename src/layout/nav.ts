@@ -1,18 +1,10 @@
-/**
- * The primary navigation model — the operator-console IA, grouped by admin surface
- * rather than by backing resource shape. `to` values are validated by the route tree at
- * runtime. Route paths are unchanged from the prior IA so deep links and e2e selectors
- * survive the reskin.
- */
 export interface NavItem {
   to: string;
   label: string;
-  /** Key into the live badge-count map the shell computes from real queries. */
   badgeKey?: string;
 }
 
 export interface NavSection {
-  /** `undefined` renders no group heading (the Overview item). */
   title?: string;
   items: NavItem[];
 }

@@ -102,8 +102,6 @@ describe('RecordingCustomerKeyPanel', () => {
     ).not.toBeInTheDocument();
   });
 
-  // The client-side refusal is the point: a private key that reaches the server
-  // to be told "no" has already crossed the wire.
   it('refuses pasted private key material without contacting the server', async () => {
     mount(unprovisioned);
     const put = capturePut();
@@ -140,8 +138,6 @@ describe('RecordingCustomerKeyPanel', () => {
     expect(put.body).toBeUndefined();
   });
 
-  // A curve mismatch stored would fail closed at the first session that tried to
-  // record, so it is caught in the form.
   it('refuses a P-384 key submitted as ecies_p256, before submit', async () => {
     mount(unprovisioned);
     const put = capturePut();
@@ -170,7 +166,6 @@ describe('RecordingCustomerKeyPanel', () => {
       target: { value: 'safe://hq/recording-key' },
     });
 
-    // The operator can compare what they pasted against what they generated.
     expect(
       await within(dialog).findByText(/Fingerprint of the key you pasted/),
     ).toBeInTheDocument();
@@ -227,7 +222,6 @@ describe('RecordingCustomerKeyPanel', () => {
     const rotate = within(dialog).getByRole('button', { name: 'Rotate key' });
     expect(rotate).toBeDisabled();
 
-    // A wrong fingerprint is called out here rather than as a 409.
     fireEvent.change(
       within(dialog).getByLabelText(/Fingerprint of the key being replaced/),
       { target: { value: 'f'.repeat(64) } },
@@ -241,7 +235,6 @@ describe('RecordingCustomerKeyPanel', () => {
       within(dialog).getByLabelText(/Fingerprint of the key being replaced/),
       { target: { value: CURRENT_FINGERPRINT } },
     );
-    // Right fingerprint, still unacknowledged.
     expect(rotate).toBeDisabled();
 
     fireEvent.click(
@@ -320,8 +313,6 @@ describe('RecordingCustomerKeyPanel', () => {
     ).toBeDisabled();
   });
 
-  // settings:write is full config administration and still must not reach this
-  // key: its holder could point future recordings at a key they can read.
   it('offers no control to a caller without recording:key-manage', async () => {
     mount(unprovisioned, ['rbac:read', 'settings:write']);
     await screen.findByText('Not configured');

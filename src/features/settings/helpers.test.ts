@@ -32,8 +32,6 @@ describe('pinnedBy', () => {
     ).toBeUndefined();
   });
 
-  // A field the API pins but this build has no property name for must still read
-  // as pinned; silently treating it as writable would be the lie.
   it('still reports a pinned field it cannot name', () => {
     expect(pinnedBy('somethingNew', ['somethingNew'])).toBe(
       'a deployment property',
@@ -98,8 +96,6 @@ describe('wormOptions', () => {
     ]);
   });
 
-  // The one-way direction has to be visible before submit, not discovered as a
-  // 422 afterwards: once in compliance, governance is not an offered option.
   it('drops governance once compliance is in force', () => {
     expect(wormOptions('compliance').map((o) => o.value)).toEqual([
       'compliance',

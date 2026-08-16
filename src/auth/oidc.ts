@@ -1,8 +1,5 @@
 import type { OidcConfig } from './config';
 
-/**
- * PKCE makes public client code exchange safe. Bearer is NEVER written to web storage (see tokenStore).
- */
 const TRANSIENT_KEY = 'sl.oidc.pkce';
 
 export interface PkceTransient {
@@ -50,7 +47,6 @@ export function storeTransient(t: PkceTransient): void {
   sessionStorage.setItem(TRANSIENT_KEY, JSON.stringify(t));
 }
 
-/** Read and immediately delete the transient (single-use). */
 export function takeTransient(): PkceTransient | undefined {
   const raw = sessionStorage.getItem(TRANSIENT_KEY);
   sessionStorage.removeItem(TRANSIENT_KEY);

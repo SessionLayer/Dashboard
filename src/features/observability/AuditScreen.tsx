@@ -24,10 +24,6 @@ export function AuditScreen() {
   const list = useAuditEvents(filters);
   const [selected, setSelected] = useState<AuditEventResource | undefined>();
 
-  // Column set mirrors the operator-console audit-log design (Time / Type /
-  // Detail / Actor / Correlation / Decision); a row click reconstructs the
-  // full correlated story, including the fields (subject, session, node,
-  // source IP) that don't fit in this dense row.
   const columns: Column<AuditEventResource>[] = [
     { header: 'Time', cell: (e) => <Time value={e.occurredAt} /> },
     { header: 'Type', cell: (e) => <code>{e.action}</code> },

@@ -27,12 +27,6 @@ import {
 import { RecordingCustomerKeyPanel } from './RecordingCustomerKeyPanel';
 import './settings.css';
 
-/**
- * The cluster-wide operator settings. A DB-enforced singleton, so this is one
- * form on one resource rather than a list — and a form that has to be honest
- * about three different reasons a field may not be editable: it is read-only,
- * it is pinned by a deployment property, or it only moves one way.
- */
 export function OperatorSettingsScreen() {
   const settings = useOperatorSettings();
   // Owned by the screen, not the form: a successful save bumps the version,

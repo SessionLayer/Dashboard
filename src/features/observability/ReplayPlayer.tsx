@@ -24,11 +24,6 @@ function freshEngine(cast: Asciicast, includeInput: boolean): Engine {
   };
 }
 
-/**
- * asciinema-style player over a decrypted asciicast. Advances a real terminal
- * emulator incrementally while playing and rebuilds from the start only on a
- * backward seek or an input-visibility toggle. No external player library.
- */
 export function ReplayPlayer({ cast }: { cast: Asciicast }) {
   const duration = cast.duration;
   const [time, setTime] = useState(0);
@@ -114,7 +109,6 @@ export function ReplayPlayer({ cast }: { cast: Asciicast }) {
   const togglePlay = useCallback(() => {
     setPlaying((prev) => {
       if (!prev && timeRef.current >= duration) {
-        // Restart from the top when replaying a finished recording.
         timeRef.current = 0;
         setTime(0);
         render(0, showInput);

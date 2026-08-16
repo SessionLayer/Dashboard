@@ -43,12 +43,6 @@ const SEAL_ALGORITHMS = enumOptions<RecordingKeySealAlgorithm>({
   rsa_oaep_sha256: 'rsa_oaep_sha256 — RSA public key',
 });
 
-/**
- * The customer recording key: the one setting a fresh install cannot start
- * without. The Gateway seals every per-recording data key to this public key,
- * and the private half never reaches the platform — so this screen only ever
- * handles the public half, and says so.
- */
 export function RecordingCustomerKeyPanel({
   settingsVersion,
   configured,

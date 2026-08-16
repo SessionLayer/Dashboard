@@ -90,8 +90,6 @@ describe('JitRequestList', () => {
     expect(await screen.findByText('Not permitted')).toBeInTheDocument();
   });
 
-  // ---- no self-approval affordance ----
-
   it('does NOT offer approve/deny when the current user is the requester', async () => {
     server.use(
       http.get(cp('/v1/jit-requests'), () =>
@@ -241,7 +239,6 @@ describe('JitRequestList', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
     expect(await screen.findByText('Approval chain')).toBeInTheDocument();
-    // Level 2 is unique to the fetched detail (getJitRequest), not the row.
     expect(screen.getByText(/oidc_group/)).toBeInTheDocument();
   });
 });

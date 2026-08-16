@@ -1,8 +1,6 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-// Unit/component tests run in jsdom with Testing Library + MSW. The API is always
-// mocked here (no live Control Plane is wired); see src/test/.
 export default defineConfig({
   plugins: [react()],
   test: {

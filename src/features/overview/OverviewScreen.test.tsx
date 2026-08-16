@@ -241,9 +241,9 @@ describe('OverviewScreen', () => {
     });
     expect(kpiValue('Pending JIT approvals')).toBe('1');
     expect(kpiValue('Active locks')).toBe('1');
-    expect(kpiValue('Break-glass to review')).toBe('1'); // only the pending one
+    expect(kpiValue('Break-glass to review')).toBe('1');
     expect(kpiValue('Nodes')).toBe('4');
-    expect(kpiValue('Nodes needing attention')).toBe('2'); // unhealthy + unreachable
+    expect(kpiValue('Nodes needing attention')).toBe('2');
   });
 
   it('renders a per-section loading state while reads are in flight', () => {
