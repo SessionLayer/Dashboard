@@ -1,4 +1,3 @@
-# Generated / vendored — never reformat.
 src/api/schema.d.ts
 openapi/openapi.yaml
 package-lock.json
@@ -11,7 +10,6 @@ package-lock.json
 # this one would make the four charts diverge from each other.
 deploy/helm/
 
-# Build & test artifacts
 dist/
 coverage/
 playwright-report/

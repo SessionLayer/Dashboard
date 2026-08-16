@@ -10,7 +10,6 @@
 # The serve stage runs no commands, so the arm64 image needs no emulation to
 # build: dist/ is architecture-neutral and everything else is a copy.
 
-# --- build stage ------------------------------------------------------------
 FROM --platform=$BUILDPLATFORM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
 WORKDIR /app
 
@@ -48,10 +47,6 @@ RUN grep -q '__CP_ORIGIN__ __OIDC_ORIGIN__ __OBJECT_STORE_ORIGIN__' deploy/secur
       deploy/security-headers.conf > /security-headers.conf.template \
  && grep -q '${SL_CSP_CONNECT_SRC}' /security-headers.conf.template
 
-# --- serve stage ------------------------------------------------------------
-# nginx-unprivileged rather than stock nginx: it runs as uid 101 with no root
-# master process, listens on 8080, and already keeps its pid and temp paths on
-# /tmp, so the only writable path the container needs is a tmpfs there.
 FROM nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6 AS serve
 
 ARG VERSION=0.0.0-dev

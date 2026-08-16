@@ -86,7 +86,6 @@ describe('SessionPage', () => {
     await screen.findByText('carol@corp');
     expect(screen.getByText('shell')).toBeInTheDocument();
     expect(screen.getByText('exec')).toBeInTheDocument();
-    // 90s between started/ended, purely derived from the two real timestamps.
     expect(screen.getByText('1m')).toBeInTheDocument();
   });
 
@@ -98,7 +97,6 @@ describe('SessionPage', () => {
     });
 
     await screen.findByText('alice@corp');
-    // bob has ended → only alice's session is terminable
     expect(screen.getAllByRole('button', { name: 'Terminate' })).toHaveLength(
       1,
     );

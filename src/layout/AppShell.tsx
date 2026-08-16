@@ -14,10 +14,6 @@ import { DensityToggle } from './density';
 import { NAV_SECTIONS, type NavItem } from './nav';
 import { NavLink } from './NavLink';
 
-/** Live counts for the nav badges — derived from the same queries the Overview
- * screen uses (shared react-query cache key, so this never issues extra
- * requests beyond what Overview already fires). Never invented: every badge
- * traces to a real list the operator can open. */
 function useNavBadges(): Record<string, number> {
   const nodes = useNodes();
   const locks = useActiveLocks();
@@ -58,7 +54,6 @@ function currentTitle(pathname: string): { title: string; path: string } {
   return { title: 'SessionLayer', path: pathname };
 }
 
-/** Authenticated app shell: sidebar nav + header (title, density, user) + content. */
 export function AppShell() {
   const { user, logout } = useAuth();
   const [navOpen, setNavOpen] = useState(false);

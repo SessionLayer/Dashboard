@@ -36,7 +36,6 @@ function orphaned(lease: SessionLeaseResource): boolean {
   return lease.countsTowardCap && lease.sessionId === undefined;
 }
 
-/** A lease with no TTL counts until something releases it — the unbounded case. */
 function unbounded(lease: SessionLeaseResource): boolean {
   return lease.countsTowardCap && lease.expiresAt === undefined;
 }

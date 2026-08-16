@@ -97,8 +97,6 @@ describe('GatewayEnrollmentTokenList', () => {
     expect(body?.gatewayName).toBe('gw-us-2');
   });
 
-  // The raw token is returned exactly once, so it must not survive the dialog
-  // that revealed it — the list operation never carries it back.
   it('never renders the raw token outside the issuance dialog', async () => {
     const issuedRow: GatewayEnrollmentTokenResource = {
       id: 'g2',
@@ -146,10 +144,7 @@ describe('GatewayEnrollmentTokenList', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-    // The refetched list now contains the newly issued token's row…
     expect(await screen.findByText('gw-us-2')).toBeInTheDocument();
-    // …but the secret itself is gone from the document, and never came back
-    // over the list operation.
     await waitFor(() => {
       expect(screen.queryByText(RAW_TOKEN)).not.toBeInTheDocument();
     });
@@ -220,10 +215,7 @@ describe('GatewayEnrollmentTokenList', () => {
     });
   });
 
-  // Revocation is idempotent server-side. Model the case an operator actually
-  // hits: a list still showing a token another admin already revoked. Revoking
-  // it again must read as an ordinary success, not an error. The list is held
-  // stale on purpose so the second Revoke is reachable.
+  // The list is held stale on purpose so the second Revoke is reachable.
   it('treats a repeat revoke as success (idempotent)', async () => {
     let calls = 0;
     server.use(
@@ -252,7 +244,6 @@ describe('GatewayEnrollmentTokenList', () => {
       await waitFor(() => {
         expect(calls).toBe(expected);
       });
-      // Success closes the dialog; a failure would keep it open with an alert.
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       });
@@ -337,9 +328,6 @@ describe('GatewayEnrollmentTokenList', () => {
     expect(screen.getByLabelText('Trust anchor PEM')).toHaveTextContent(
       'BEGIN CERTIFICATE',
     );
-    // Both copy affordances matter: the fingerprint is the operator's only
-    // out-of-band check that the anchor they installed is the one the Control
-    // Plane served, and the install guide tells them to compare it.
     expect(
       screen.getByRole('button', { name: 'Copy PEM' }),
     ).toBeInTheDocument();

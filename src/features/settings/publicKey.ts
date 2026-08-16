@@ -64,10 +64,6 @@ function firstInnerTag(der: Uint8Array): number | undefined {
   return der[offset];
 }
 
-/**
- * Vet a pasted key. Rejections carry `privateKeyMaterial` so the caller can
- * treat that case as the loud one it is rather than one more validation miss.
- */
 export function inspectSubmittedKey(raw: string): KeyCheck {
   const text = raw.trim();
   if (text === '') return reject('Paste the base64 DER public key.');
@@ -104,11 +100,6 @@ export function inspectSubmittedKey(raw: string): KeyCheck {
   return { ok: true, der };
 }
 
-/**
- * Confirm the key really is the algorithm and curve it is being filed under, by
- * importing it. A mismatch caught here is a corrected paste; the same mismatch
- * stored would fail closed at the first session that tried to record.
- */
 export async function verifySealAlgorithm(
   der: Uint8Array,
   algorithm: SealAlgorithm,
@@ -140,7 +131,6 @@ export async function verifySealAlgorithm(
   }
 }
 
-/** SHA-256 over the DER SPKI, lowercase hex — the form the API reports back. */
 export async function fingerprintSha256(der: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', der.slice().buffer);
   return Array.from(new Uint8Array(digest), (b) =>
@@ -148,12 +138,10 @@ export async function fingerprintSha256(der: Uint8Array): Promise<string> {
   ).join('');
 }
 
-/** Strip the grouping an operator may have copied, to the API's wire form. */
 export function normalizeFingerprint(value: string): string {
   return value.trim().toLowerCase().replace(/[\s:]/g, '');
 }
 
-/** Case- and whitespace-insensitive compare of two hex fingerprints. */
 export function fingerprintsMatch(a: string, b: string): boolean {
   const left = normalizeFingerprint(a);
   return left !== '' && left === normalizeFingerprint(b);

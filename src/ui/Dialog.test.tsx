@@ -50,12 +50,10 @@ describe('Dialog', () => {
     const close = screen.getByLabelText('Close dialog');
     const save = screen.getByRole('button', { name: 'Save' });
 
-    // Tab off the last focusable wraps to the first (the close button).
     save.focus();
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(document.activeElement).toBe(close);
 
-    // Shift+Tab off the first wraps to the last.
     close.focus();
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(save);

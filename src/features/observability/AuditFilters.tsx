@@ -43,12 +43,6 @@ function DateTimeField({
   );
 }
 
-/**
- * The audit search form over every contract dimension: identity, subject,
- * action, outcome, session, node (+ node label), source IP, capability, access model,
- * time range, and correlation id — all real, write-path-populated search dimensions the
- * `/v1/audit-events` search accepts.
- */
 export function AuditFilters({
   draft,
   onChange,

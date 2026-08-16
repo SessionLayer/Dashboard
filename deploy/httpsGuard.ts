@@ -14,7 +14,6 @@ function isLoopback(hostname: string): boolean {
   );
 }
 
-/** Opting out is deliberate and auditable: the published evaluation image sets it. */
 export const UNCONFIGURED_OPT_IN = 'SL_ALLOW_UNCONFIGURED_BUILD';
 
 export function httpsBaseViolations(

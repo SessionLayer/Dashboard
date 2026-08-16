@@ -217,8 +217,6 @@ const DECISION_COPY: Record<
   },
 };
 
-/** Exported so the Overview screen can offer the same inline Approve/Deny flow
- *  without duplicating the mutation wiring. */
 export function JitDecisionDialog({
   kind,
   request,

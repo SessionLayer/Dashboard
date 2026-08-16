@@ -34,7 +34,6 @@ const SUBJECT_KIND_OPTIONS = enumOptions<SubjectKind>({
   group: 'group',
 });
 
-/** A compact `k=v k2=v2` summary of the scope selector for the list column. */
 function scopeSummary(scope: Record<string, unknown> | undefined): string {
   if (scope === undefined) return 'global';
   const entries = Object.entries(scope);

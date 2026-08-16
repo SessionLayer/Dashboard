@@ -6,7 +6,6 @@ import { JitRequestList } from './JitRequestList';
 import { LockList } from './LockList';
 import { PinList } from './PinList';
 
-/** Routes for the access-request & incident-response screen-group. */
 export function createIrRoutes(parent: AnyRoute): AnyRoute[] {
   return [
     createRoute({
@@ -32,7 +31,6 @@ export function createIrRoutes(parent: AnyRoute): AnyRoute[] {
   ];
 }
 
-// Optional demo/E2E handlers. Unit tests install their own via `server.use(...)`.
 const demoJitRequest = {
   id: '018f0000-0000-7000-8000-000000000001',
   requester: 'dev@corp.example',

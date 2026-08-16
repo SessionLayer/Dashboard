@@ -1,8 +1,3 @@
-# The published image, installed knowingly. Its Control Plane and identity
-# provider endpoints were compiled in at build time and there were none, so the
-# bundle calls http://localhost:8080 and only reaches a Control Plane the
-# browser can find there, through a port-forward. Everything else is the
-# chart's default, which is what keeps the defaults rendered in CI.
 image:
   repository: ghcr.io/sessionlayer/dashboard
   allowUnconfiguredBuild: true

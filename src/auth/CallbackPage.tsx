@@ -6,10 +6,8 @@ import { LoadingState } from '../ui/States';
 import { useAuth } from './AuthContext';
 
 /**
- * OIDC redirect landing. Exchanges the authorization code for the bearer
- * (validating `state`), then routes into the dashboard. Runs exactly once — a
- * ref guards against React StrictMode's double-invoke, since the code is
- * single-use and the transient is consumed on read.
+ * Runs exactly once — a ref guards against React StrictMode's double-invoke,
+ * since the code is single-use and the transient is consumed on read.
  */
 export function CallbackPage() {
   const { completeCallback } = useAuth();

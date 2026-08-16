@@ -22,7 +22,6 @@ function readFileBytes(file: File): Promise<Uint8Array> {
 }
 
 export interface CustomerKeyState {
-  /** The imported, NON-extractable private key — held in memory only. */
   key: CryptoKey | undefined;
   keyName: string | undefined;
   keyError: string | undefined;

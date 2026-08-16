@@ -42,7 +42,6 @@ function effectBadge(effect: Effect) {
   return <Badge tone={effect === 'deny' ? 'fail' : 'pass'}>{effect}</Badge>;
 }
 
-/** A compact `k=v k2=v2` summary of a selector object for the list column. */
 function selectorSummary(selector: Record<string, unknown>): string {
   const entries = Object.entries(selector);
   if (entries.length === 0) return '*';

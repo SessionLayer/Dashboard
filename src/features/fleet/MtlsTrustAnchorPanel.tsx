@@ -1,12 +1,6 @@
 import { AsyncList, CopyButton, Detail, DetailList, Time } from '../../ui';
 import { useMtlsTrustAnchor } from './api';
 
-/**
- * The internal mTLS CA certificate a Gateway pins, shown beside the enrollment
- * tokens because installing a Gateway needs both in one sitting. Public
- * material only — the contract gates it on `gateway:enroll` rather than
- * `ca:manage` for exactly this reason.
- */
 export function MtlsTrustAnchorPanel() {
   const { data, isPending, isError, error } = useMtlsTrustAnchor();
 

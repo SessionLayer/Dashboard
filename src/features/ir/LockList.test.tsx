@@ -33,8 +33,6 @@ describe('LockList', () => {
     expect(
       screen.getByText(/identities: mallory@corp\.example/),
     ).toBeInTheDocument();
-    // "Kind" is derived from which target facet is populated (no separate
-    // contract field) — an identities-only target reads as "identity".
     expect(screen.getByText('identity')).toBeInTheDocument();
   });
 

@@ -1,6 +1,5 @@
 import type { BadgeTone } from '../../ui';
 
-/** Map a recording lifecycle status to a badge tone. */
 export function statusTone(status: string | undefined): BadgeTone {
   switch (status) {
     case 'finalized':
@@ -16,7 +15,6 @@ export function statusTone(status: string | undefined): BadgeTone {
   }
 }
 
-/** Map a WORM mode to a badge tone (compliance is the stronger, un-deletable mode). */
 export function wormTone(mode: string | undefined): BadgeTone {
   switch (mode) {
     case 'compliance':
@@ -28,7 +26,6 @@ export function wormTone(mode: string | undefined): BadgeTone {
   }
 }
 
-/** Map an audit outcome to a badge tone. */
 export function outcomeTone(outcome: string | undefined): BadgeTone {
   const o = (outcome ?? '').toLowerCase();
   if (

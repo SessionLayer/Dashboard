@@ -48,8 +48,6 @@ export function createFleetRoutes(parent: AnyRoute): AnyRoute[] {
   ];
 }
 
-// ---- Optional demo/E2E handlers -------------------------------------------
-
 const demoNodes: NodeResource[] = [
   {
     id: '018f9c00-0000-7000-8000-0000000000a1',

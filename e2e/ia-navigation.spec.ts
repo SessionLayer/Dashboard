@@ -122,10 +122,6 @@ test('every top-level nav group is reachable and renders its screen', async ({
   await stubControlPlane(page);
   await signIn(page);
 
-  // One representative destination per top-level nav group, in order:
-  // Overview (already landed on), Runtime, Access, Access config, Policies,
-  // Audit log. A dead link or a route/screen that throws would fail the
-  // `findByRole('heading', ...)` assertion below instead of silently passing.
   const stops: { link: string; heading: string }[] = [
     { link: 'Nodes', heading: 'Nodes' },
     { link: 'Sessions', heading: 'Sessions' },
@@ -139,9 +135,6 @@ test('every top-level nav group is reachable and renders its screen', async ({
     { link: 'Certificate authorities', heading: 'Certificate authorities' },
     { link: 'Service accounts', heading: 'Service accounts' },
     { link: 'Join tokens', heading: 'Join tokens' },
-    // The e2e admin's JWT has no `gateway:enroll`, so this stop also proves the
-    // screen renders for an operator who cannot issue — the trust-anchor panel
-    // and the issue/revoke actions stay hidden.
     { link: 'Gateway enrollment', heading: 'Gateway enrollment' },
     { link: 'Pins & OTP', heading: 'Pins & OTP' },
     { link: 'Node policies', heading: 'Node policies' },
@@ -152,9 +145,6 @@ test('every top-level nav group is reachable and renders its screen', async ({
       link: 'Session-limit policies',
       heading: 'Session-limit policies',
     },
-    // The e2e admin holds neither settings:write nor recording:key-manage, so
-    // this stop also proves the screen renders read-only for an operator who
-    // cannot save it and offers no key control they would be refused.
     { link: 'Operator settings', heading: 'Operator settings' },
     { link: 'Audit log', heading: 'Audit events' },
   ];
@@ -170,10 +160,6 @@ test('every top-level nav group is reachable and renders its screen', async ({
   }
 });
 
-// The operator-settings screen is the one place a permission mistake would be
-// most expensive: it carries the recording key. Prove that an operator holding
-// neither scope is shown the state of the cluster and no control they would be
-// refused.
 test('operator settings render read-only without settings:write', async ({
   page,
 }) => {
@@ -191,8 +177,6 @@ test('operator settings render read-only without settings:write', async ({
   );
   await expect(page.getByLabel(/^Audit retention/)).toBeDisabled();
 
-  // The unprovisioned key still has to be visible — it is why a fresh install
-  // refuses sessions — but the control to set it is not offered.
   await expect(
     page.getByText(/refuses every session until one is set/),
   ).toBeVisible();

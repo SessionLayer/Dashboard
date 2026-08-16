@@ -31,8 +31,6 @@ const JOIN_TOKENS_KEY = resourceKey('joinTokens');
 const GATEWAY_ENROLLMENT_TOKENS_KEY = resourceKey('gatewayEnrollmentTokens');
 const SESSIONS_KEY = resourceKey('sessions');
 
-// ---- Nodes -----------------------------------------------------------------
-
 export function useNodes() {
   return useQuery({
     queryKey: NODES_KEY,
@@ -41,7 +39,6 @@ export function useNodes() {
   });
 }
 
-/** Fresh single-node detail; only fetched while the detail dialog is open. */
 export function useNode(nodeId: string | undefined) {
   return useQuery({
     queryKey: resourceKey('nodes', nodeId),
@@ -56,8 +53,6 @@ export function useNode(nodeId: string | undefined) {
   });
 }
 
-// NB: no contract-defined Idempotency-Key parameter on this operation — the
-// same gap as the IR/access mutations.
 export function useRegisterNode() {
   const qc = useQueryClient();
   return useMutation({
@@ -111,8 +106,6 @@ export function useReleaseQuarantine() {
   });
 }
 
-// ---- Join tokens -----------------------------------------------------------
-
 export function useJoinTokens() {
   return useQuery({
     queryKey: JOIN_TOKENS_KEY,
@@ -143,8 +136,6 @@ export function useRevokeJoinToken() {
     onSuccess: () => qc.invalidateQueries({ queryKey: JOIN_TOKENS_KEY }),
   });
 }
-
-// ---- Gateway enrollment tokens ---------------------------------------------
 
 export function useGatewayEnrollmentTokens() {
   return useQuery({
@@ -185,11 +176,6 @@ export function useRevokeGatewayEnrollmentToken() {
   });
 }
 
-/**
- * The internal mTLS CA certificate a Gateway pins. Public material, and a
- * read-only sibling of `/v1/cas` rather than a member of it — it has no `caId`
- * and no rotate/update/delete surface.
- */
 export function useMtlsTrustAnchor() {
   return useQuery({
     queryKey: resourceKey('mtlsTrustAnchor'),
@@ -197,8 +183,6 @@ export function useMtlsTrustAnchor() {
       unwrap(await api.GET('/v1/cas/mtls/trust-anchor', { signal })),
   });
 }
-
-// ---- Sessions --------------------------------------------------------------
 
 export interface SessionFilters {
   identity?: string;
@@ -232,18 +216,11 @@ export function useSessions(
   );
 }
 
-// ---- Session leases --------------------------------------------------------
-
 export interface SessionLeaseFilters {
   identity?: string;
   activeOnly?: boolean;
 }
 
-/**
- * The rows the per-identity concurrency cap is counted from. A lease that
- * outlived its session refuses the identity with the same generic policy denial
- * as a real deny, so this list is how the two are told apart.
- */
 export function useSessionLeases(
   filters: SessionLeaseFilters,
 ): CursorListResult<SessionLeaseResource> {

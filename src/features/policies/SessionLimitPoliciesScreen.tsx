@@ -26,7 +26,6 @@ import {
 
 const PERM = 'settings:write';
 
-/** A knob's cell: the override value, or the honest "deferred to default" state. */
 function knobCell(value: number | undefined) {
   return value ?? <span className="muted">cluster default</span>;
 }

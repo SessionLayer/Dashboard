@@ -9,7 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-/** The one button primitive. `type` defaults to `button` so it never submits a form by accident. */
+/** `type` defaults to `button` so it never submits a form by accident. */
 export function Button({
   variant = 'secondary',
   size = 'md',

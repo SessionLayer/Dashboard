@@ -3,14 +3,6 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/**
- * A modal dialog. Accessible: `role="dialog"` + `aria-modal`, labelled by its
- * title, closes on Escape and backdrop click, moves focus into the dialog on open
- * (restoring it to the trigger on close), and TRAPS Tab focus within the panel so
- * keyboard focus cannot reach the obscured page behind an `aria-modal` surface.
- * Rendered inline (no portal) — the overlay is fixed-positioned above the app.
- * `size="wide"` widens it for the recording player.
- */
 export function Dialog({
   title,
   onClose,

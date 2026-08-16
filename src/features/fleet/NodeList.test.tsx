@@ -58,12 +58,8 @@ describe('NodeList', () => {
     expect(screen.getByText('db-01')).toBeInTheDocument();
     expect(screen.getByText('unreachable')).toBeInTheDocument();
     expect(screen.getByText('quarantined')).toBeInTheDocument();
-    // label chip key + value
     expect(screen.getByText('env')).toBeInTheDocument();
     expect(screen.getByText('prod')).toBeInTheDocument();
-    // "Last seen" is the closest honest proxy for a heartbeat the contract
-    // doesn't expose (updatedAt, not a real liveness signal) — exact UTC value
-    // lives in the title so the assertion doesn't depend on wall-clock time.
     expect(screen.getByText('Last seen')).toBeInTheDocument();
     expect(screen.getByTitle('2026-07-16T09:59:30.000Z')).toBeInTheDocument();
   });
@@ -142,7 +138,6 @@ describe('NodeList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Register node…' }));
     const dialog = screen.getByRole('dialog');
 
-    // No host identity yet: submit is blocked and the no-TOFU error shows.
     expect(
       within(dialog).getByRole('button', { name: 'Register' }),
     ).toBeDisabled();

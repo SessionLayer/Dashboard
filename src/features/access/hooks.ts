@@ -26,8 +26,6 @@ import type {
   UpdateServiceAccountRequest,
 } from '../../api/types';
 
-// ── Rules (dp_rule) ────────────────────────────────────────────────────────
-
 export function useRules() {
   return useCursorList<RuleResource>(
     resourceKey('rules'),
@@ -84,8 +82,6 @@ export function useDeleteRule() {
   });
 }
 
-// ── Platform roles ───────────────────────────────────────────────────────────
-
 export function useRoles() {
   return useCursorList<RoleResource>(
     resourceKey('roles'),
@@ -141,8 +137,6 @@ export function useDeleteRole() {
     onSuccess: () => qc.invalidateQueries({ queryKey: resourceKey('roles') }),
   });
 }
-
-// ── Role bindings ─────────────────────────────────────────────────────────────
 
 export function useRoleBindings() {
   return useCursorList<RoleBindingResource>(
@@ -211,8 +205,6 @@ export function useDeleteRoleBinding() {
   });
 }
 
-// ── Certificate authorities ──────────────────────────────────────────────────
-
 export function useCas() {
   return useCursorList<CaResource>(resourceKey('cas'), async (cursor, signal) =>
     unwrap(await api.GET('/v1/cas', { params: { query: { cursor } }, signal })),
@@ -263,11 +255,6 @@ export function useDeleteCa() {
   });
 }
 
-/**
- * The active CA's public key for one SSH kind. Public verification material —
- * the operator needs it to fill `TrustedUserCAKeys` on every node, and until
- * this existed the only source was a query against the database as its owner.
- */
 export function useCaPublicKey(caKind: CaKind) {
   return useQuery({
     queryKey: resourceKey('cas', caKind, 'public-key'),
@@ -298,8 +285,6 @@ export function useRotateCa() {
     },
   });
 }
-
-// ── Service accounts (+ runtime credentials) ─────────────────────────────────
 
 export function useServiceAccounts() {
   return useCursorList<ServiceAccountResource>(
@@ -370,7 +355,6 @@ export function useDeleteServiceAccount() {
   });
 }
 
-/** Issues a one-time credential; the returned `clientSecret` is shown once and never re-fetched. */
 export function useIssueServiceAccountCredential() {
   return useMutation({
     mutationFn: async ({

@@ -43,7 +43,6 @@ import './overview.css';
 
 const RECENT = 6;
 
-/** The landing dashboard: KPI tiles plus recent-items and incident-signal lists. */
 export function OverviewScreen() {
   const navigate = useNavigate();
   const sessions = useActiveSessions();
@@ -307,7 +306,6 @@ function Kpi({
   isError: boolean;
   tone?: 'warn' | 'fail';
   plus?: boolean;
-  /** Every KPI tile navigates to the real screen it summarizes (mockup `stat.go`). */
   onActivate: () => void;
 }) {
   const emphasize = tone !== undefined && !isPending && !isError && value > 0;
@@ -329,8 +327,6 @@ function Kpi({
   );
 }
 
-/** Incident-signal banner (mockup: `.alert-fail`/`.alert-warn`). Built from real
- *  counts already queried for the KPI tiles — never invented flavor text. */
 function AlertBanner({
   tone,
   text,
@@ -517,8 +513,6 @@ function ControlPlaneSection() {
   );
 }
 
-// --- column definitions -----------------------------------------------------
-
 // Total by construction rather than exhaustive: `neutral` is the default for
 // standing access and for any model added later, which is the right tone to
 // guess wrong with. It is not an unfinished switch.
@@ -575,9 +569,6 @@ const SESSION_COLUMNS: Column<SessionResource>[] = [
   { header: 'Started', cell: (r) => <Time value={r.startedAt} /> },
 ];
 
-/** Inline Approve/Deny — self-approval is impossible (reflects server truth:
- *  a requester can never decide their own request), same gating as the JIT
- *  requests screen. */
 function jitColumns(
   canApprove: boolean,
   subject: string | undefined,

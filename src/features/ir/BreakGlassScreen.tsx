@@ -51,8 +51,6 @@ export function BreakGlassScreen() {
   const canManage = useCan('breakglass:manage');
   const tabRefs = useRef(new Map<TabId, HTMLButtonElement>());
 
-  // WAI-ARIA tabs keyboard model: Left/Right cycle, Home/End jump; the newly
-  // selected tab both activates and takes focus (roving tabindex).
   const onTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const idx = TABS.findIndex((t) => t.id === tab);
     let next: number;
@@ -120,8 +118,6 @@ export function BreakGlassScreen() {
     </section>
   );
 }
-
-// -------------------------------------------------------------- Activations
 
 const REVIEW_FILTER_OPTIONS = [
   { value: '' as const, label: 'All' },
@@ -238,8 +234,6 @@ function ReviewActivationDialog({
     </ConfirmDialog>
   );
 }
-
-// -------------------------------------------------------------- Credentials
 
 function CredentialsTab({ canManage }: { canManage: boolean }) {
   const [registering, setRegistering] = useState(false);
@@ -450,8 +444,6 @@ function RevokeCredentialDialog({
     </ConfirmDialog>
   );
 }
-
-// ------------------------------------------------------------ Offline codes
 
 function OfflineCodesTab({ canManage }: { canManage: boolean }) {
   const [issuing, setIssuing] = useState(false);

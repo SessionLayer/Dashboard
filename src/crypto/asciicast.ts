@@ -1,9 +1,6 @@
 /**
- * asciicast v2 parser. A recording is a header line
- * (`{"version":2,"width":…,"height":…,"timestamp":…}`) followed by event lines
- * `[elapsed, "code", "data"]` where code ∈ o(output) i(input) r(resize)
- * m(marker). File-transfer audit surfaces as `m` markers (the recorder emits
- * an `m` for each SFTP/SCP operation).
+ * File-transfer audit surfaces as `m` markers — the recorder emits one per
+ * SFTP/SCP operation.
  */
 
 export type EventCode = 'o' | 'i' | 'r' | 'm';

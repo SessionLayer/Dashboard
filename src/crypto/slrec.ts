@@ -17,10 +17,7 @@ const WRAP_AAD = new TextEncoder().encode(
   'SessionLayer/recording/data-key-wrap/v1',
 );
 
-export type SlrecErrorCode =
-  | 'malformed' // truncated / bad magic — not a SLREC1 object
-  | 'unsupported-key' // customer key not importable as PKCS#8 P-256
-  | 'decrypt-failed'; // wrong key or tampered object (GCM tag mismatch)
+export type SlrecErrorCode = 'malformed' | 'unsupported-key' | 'decrypt-failed';
 
 export class SlrecError extends Error {
   readonly code: SlrecErrorCode;
@@ -133,12 +130,6 @@ function stripPem(pem: string): { der: Uint8Array; kind: 'pkcs8' | 'sec1' } {
   return { der, kind: pkcs8 !== null ? 'pkcs8' : 'sec1' };
 }
 
-/**
- * Import the customer's P-256 private key from PKCS#8 (PEM or DER) as a
- * non-extractable ECDH key. SEC1 (`BEGIN EC PRIVATE KEY`) is rejected with a
- * clear message — WebCrypto imports only PKCS#8 for EC; convert with
- * `openssl pkcs8 -topk8 -nocrypt`.
- */
 export async function importCustomerPrivateKey(
   input: string | ArrayBuffer | Uint8Array,
 ): Promise<CryptoKey> {
@@ -223,7 +214,6 @@ async function deriveDataKey(
       toArrayBuffer(header.wrappedKey),
     );
   } catch {
-    // Wrong customer key → different ECDH secret → wrong KEK → GCM tag mismatch.
     throw new SlrecError(
       'decrypt-failed',
       'wrong customer key for this recording',
@@ -306,7 +296,6 @@ export async function unsealRecording(
   return out;
 }
 
-/** Convenience: unseal directly to the decoded asciicast text. */
 export async function unsealToText(
   object: Uint8Array,
   privateKey: CryptoKey,

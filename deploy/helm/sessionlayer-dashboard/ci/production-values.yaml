@@ -1,11 +1,5 @@
-# A complete, realistic production configuration, used to lint and schema-check
-# the chart. The Dashboard holds no credential, so nothing here is one.
 replicaCount: 3
 
-# A production install runs an image you built: the Control Plane and identity
-# provider endpoints are compiled into the bundle, so the published image can
-# only ever point at the evaluation endpoints it was built with. See
-# ci/evaluation-values.yaml for that one.
 image:
   repository: registry.example.com/sessionlayer/dashboard
   tag: "v0.0.2"

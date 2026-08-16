@@ -1,6 +1,3 @@
-/* Operator-settings feature styles. Composes with the foundation design tokens
-   (--surface/--border/--text/--muted/--accent…). */
-
 .settings-form {
   display: flex;
   flex-direction: column;
@@ -29,9 +26,6 @@
   font-size: 12.5px;
 }
 
-/* A consequence the operator has to read before acting on it — an unprovisioned
-   key that is refusing every session, or the cost of a rotation. Loud enough to
-   stop a skim, not styled as a failure that already happened. */
 .settings-alarm {
   border: 1px solid var(--warn-border);
   border-left: 3px solid var(--warn);

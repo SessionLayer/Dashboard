@@ -53,8 +53,6 @@ export function AccessModelBadge({ model }: { model: AccessModel }) {
   return <Badge tone={ACCESS_TONE[model]}>{model}</Badge>;
 }
 
-/** Shared by the session list and its detail dialog so both render capabilities
- *  identically. */
 export function CapabilityBadges({
   caps,
 }: {

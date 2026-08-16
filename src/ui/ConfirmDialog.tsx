@@ -4,11 +4,6 @@ import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { ProblemAlert } from './States';
 
-/**
- * A confirm/cancel dialog for a destructive or high-consequence action
- * (terminate, quarantine, revoke, delete, lock). Surfaces a pending state and a
- * failed-mutation problem inline so the operator sees why an action was refused.
- */
 export function ConfirmDialog({
   title,
   confirmLabel = 'Confirm',

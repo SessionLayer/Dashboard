@@ -77,10 +77,6 @@ describe('CasScreen', () => {
     ).not.toBeInTheDocument();
   });
 
-  // The CaAlgorithm enum is wider than what can be created — it also admits the
-  // values a row may already carry — so offering the whole enum would offer a
-  // 422. Only the assemblable curves are creatable; a row carrying one of the
-  // others is still shown.
   it('offers only the algorithms a CA can actually be created with', async () => {
     server.use(
       http.get(cp('/v1/cas'), () => page([ca({ algorithm: 'ed25519' })])),
@@ -100,9 +96,6 @@ describe('CasScreen', () => {
     expect(options).toEqual(['ecdsa-p256', 'ecdsa-p384', 'ecdsa-p521']);
   });
 
-  // Unlike algorithm, a backend with no signer is NOT dropped from the list —
-  // an upgraded deployment may already have a CA row configured with one, and
-  // it must stay selectable/displayable. It is annotated instead.
   it('keeps all four backends listed, annotating the one with no signer', async () => {
     server.use(http.get(cp('/v1/cas'), () => page([ca()])));
     renderWithProviders(<CasScreen />, {
@@ -202,8 +195,6 @@ describe('CasScreen', () => {
     ).toBeInTheDocument();
   });
 
-  // update() 409s on any active CA (its backend/keyReference/algorithm can
-  // only change via rotation), so Edit must not offer a write that always fails.
   it('disables Edit for an active CA and explains why', async () => {
     server.use(http.get(cp('/v1/cas'), () => page([ca()])));
     renderWithProviders(<CasScreen />, {

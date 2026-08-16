@@ -113,7 +113,6 @@ describe('BreakGlassScreen — tab a11y', () => {
     const activations = screen.getByRole('tab', { name: 'Activations' });
     const credentials = screen.getByRole('tab', { name: 'FIDO2 credentials' });
 
-    // Roving tabindex: only the active tab is in the tab order.
     expect(activations).toHaveAttribute('aria-selected', 'true');
     expect(activations).toHaveAttribute('tabindex', '0');
     expect(credentials).toHaveAttribute('tabindex', '-1');
@@ -132,7 +131,6 @@ describe('BreakGlassScreen — tab a11y', () => {
       await screen.findByText('No break-glass credentials registered.'),
     ).toBeInTheDocument();
 
-    // Home returns to the first tab.
     fireEvent.keyDown(tablist, { key: 'Home' });
     expect(activations).toHaveAttribute('aria-selected', 'true');
   });

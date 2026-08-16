@@ -100,8 +100,6 @@ describe('inspectSubmittedKey', () => {
     expect(result.message).toMatch(/PEM armour/i);
   });
 
-  // The DER body of a private key carries no ASCII marker, so a caller that
-  // stripped the PEM header by hand must still be caught by the ASN.1 shape.
   it('refuses key material that only the ASN.1 shape betrays', () => {
     const result = inspectSubmittedKey(b64(pkcs8).replace(/\s/g, ''));
     expect(result.ok).toBe(false);

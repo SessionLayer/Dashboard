@@ -5,10 +5,6 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-// Flat config, strict + type-checked. `projectService` lets typescript-eslint
-// resolve every linted file to the nearest tsconfig (tsconfig.app.json for src,
-// tsconfig.node.json for build/test tooling) so type-aware rules have full type
-// information without a hand-maintained `project` glob.
 export default tseslint.config(
   {
     // Generated or produced artifacts are never linted. `src/api/schema.d.ts` is
@@ -34,7 +30,6 @@ export default tseslint.config(
       },
     },
   },
-  // Browser app code.
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
@@ -52,7 +47,6 @@ export default tseslint.config(
       ],
     },
   },
-  // Node-side tooling (build/test config, Playwright specs, serving-layer guard).
   {
     files: [
       '*.config.{ts,js}',
@@ -64,10 +58,6 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
-  // The flat-config file itself is Node ESM that composes third-party configs
-  // (some shipped without types, e.g. eslint-config-prettier). Turn off
-  // type-aware rules here so those loosely-typed imports don't trip
-  // no-unsafe-argument / no-deprecated on config plumbing.
   {
     files: ['eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,

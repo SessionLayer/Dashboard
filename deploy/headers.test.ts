@@ -145,17 +145,12 @@ describe('build-time https guard', () => {
     ).toEqual([]);
   });
 
-  // An unset endpoint used to be exempt, which is how a production build could
-  // succeed and ship a bundle whose API base is the browser's own machine. An
-  // image built that way cannot be repointed afterwards, so the refusal has to
-  // land at build time or not at all.
   it('refuses an unset endpoint unless the build says it meant it', () => {
     for (const env of [{}, { VITE_CP_BASE_URL: '' }]) {
       const violations = httpsBaseViolations(env);
       expect(violations).toHaveLength(1);
       expect(violations[0]).toContain('VITE_CP_BASE_URL is unset');
       expect(violations[0]).toContain(UNCONFIGURED_OPT_IN);
-      // The opt-in is the only thing that changes the answer.
       expect(httpsBaseViolations(env, '1')).toEqual([]);
     }
   });

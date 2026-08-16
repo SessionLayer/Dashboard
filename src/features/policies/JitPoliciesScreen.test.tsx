@@ -122,9 +122,6 @@ describe('JitPoliciesScreen', () => {
     });
   });
 
-  // JIT policies grant from the same full capability
-  // vocabulary as rules — the forwarding/X11 capabilities are selectable and
-  // land in the submitted payload.
   it('grants the forwarding capabilities through the create payload', async () => {
     let body: unknown;
     server.use(
@@ -170,7 +167,6 @@ describe('JitPoliciesScreen', () => {
     fireEvent.change(screen.getByRole('textbox', { name: /^name/i }), {
       target: { value: 'x' },
     });
-    // Selector defaults to a valid '{}', but TTL is still empty.
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     fireEvent.change(screen.getByRole('spinbutton', { name: /max ttl/i }), {
       target: { value: '60' },

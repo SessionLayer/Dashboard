@@ -104,7 +104,6 @@ describe('AuditScreen', () => {
     await screen.findByText('alice');
 
     fireEvent.click(screen.getByText('alice'));
-    // The dialog shows the whole correlated path in chronological order.
     expect(await screen.findByText('auth.login')).toBeInTheDocument();
     expect(screen.getByText('Correlated path')).toBeInTheDocument();
   });

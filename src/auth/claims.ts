@@ -13,7 +13,6 @@ export interface UserClaims {
   email: string | undefined;
   permissions: PlatformPermission[];
   expiresAt: number | undefined;
-  /** OIDC `nonce` claim — bound to the auth request for replay protection. */
   nonce: string | undefined;
 }
 
@@ -55,8 +54,6 @@ export function decodeClaims(token: string): UserClaims {
     return empty;
   }
 
-  // Permissions may arrive as a dedicated `permissions` claim or be folded into
-  // OAuth `scope`/`scp`. Both are read; the CP is authoritative regardless.
   const permissions = [
     ...asStringArray(payload.permissions),
     ...asStringArray(payload.scope),

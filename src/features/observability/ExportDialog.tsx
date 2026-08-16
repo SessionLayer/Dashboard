@@ -19,10 +19,6 @@ function exportErrorMessage(error: unknown): string {
   return 'The recording could not be exported.';
 }
 
-/**
- * Export a recording as a decrypted `.cast` file. The signed object is fetched
- * and decrypted in the browser; only the operator's machine ever sees plaintext.
- */
 export function ExportDialog({
   recording,
   keyState,
@@ -37,8 +33,6 @@ export function ExportDialog({
   const [error, setError] = useState<unknown>();
   const [done, setDone] = useState(false);
 
-  // Guard against a close mid-decrypt: don't trigger a surprise download or set
-  // state after the dialog has unmounted.
   const cancelled = useRef(false);
   useEffect(() => {
     cancelled.current = false;

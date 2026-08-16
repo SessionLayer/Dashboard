@@ -34,11 +34,6 @@ function DecryptError({ error }: { error: unknown }) {
   );
 }
 
-/**
- * Replays one recording end-to-end in the browser: request a signed URL, download
- * the still-encrypted object, decrypt it with the in-memory customer key, and
- * play it. The key never leaves this dialog.
- */
 export function ReplayDialog({
   recording,
   keyState,

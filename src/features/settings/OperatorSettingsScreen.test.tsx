@@ -57,7 +57,6 @@ function mount(
   });
 }
 
-/** Capture the body of the single PUT the form makes. */
 function capturePut(): { body?: UpdateOperatorSettingsRequest } {
   const captured: { body?: UpdateOperatorSettingsRequest } = {};
   server.use(
@@ -87,14 +86,11 @@ describe('OperatorSettingsScreen', () => {
     expect(
       screen.getByText(/cold start provisions a CA kind that has no row yet/),
     ).toBeInTheDocument();
-    // Read-only means no control at all, not a control that 400s on submit.
     expect(
       screen.queryByLabelText(/Default CA backend/),
     ).not.toBeInTheDocument();
   });
 
-  // The ratchet has to be visible in the control, not discovered as a 422: the
-  // Save button never becomes armed, so no request is made at all.
   it('refuses a retention decrease before submit', async () => {
     mount();
     const put = capturePut();
@@ -130,9 +126,6 @@ describe('OperatorSettingsScreen', () => {
     ).toEqual(['governance', 'compliance']);
   });
 
-  // Once compliance is in force the weakening direction is not reachable at any
-  // scope, so it is not offered — and the field says why rather than leaving the
-  // absence to be read as a bug.
   it('does not offer governance once compliance is in force', async () => {
     mount({ defaultWormMode: 'compliance' });
     const select = await screen.findByLabelText(/^Default WORM mode/);
@@ -158,7 +151,6 @@ describe('OperatorSettingsScreen', () => {
     expect(
       screen.getByText(/reverted at the next restart/),
     ).toBeInTheDocument();
-    // The other two are untouched by one field being pinned.
     expect(screen.getByLabelText(/^Default idle timeout/)).toBeEnabled();
   });
 
@@ -177,8 +169,6 @@ describe('OperatorSettingsScreen', () => {
     expect(put.body?.defaultMaxSessionSeconds).toBe(28800);
   });
 
-  // Same trap one level down: a body built from dirty fields only would clear
-  // every session-limit default the operator did not happen to touch.
   it('sends every knob back, not just the edited one', async () => {
     mount();
     const put = capturePut();
@@ -218,9 +208,6 @@ describe('OperatorSettingsScreen', () => {
     expect(put.body?.defaultIdleTimeoutSeconds).toBe(900);
   });
 
-  // The save bumps the version, which reloads the form from the server — so a
-  // confirmation owned by the form would be destroyed by the very refetch that
-  // proves the save landed.
   it('still shows the save confirmation after the resource reloads', async () => {
     let version = 7;
     server.use(
@@ -246,7 +233,6 @@ describe('OperatorSettingsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
 
     expect(await screen.findByText(/^Saved\./)).toBeInTheDocument();
-    // The reloaded resource is what the form now holds.
     await waitFor(() => {
       expect(screen.getByText('8')).toBeInTheDocument();
     });

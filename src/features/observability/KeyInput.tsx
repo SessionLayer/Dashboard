@@ -3,11 +3,6 @@ import { useId } from 'react';
 import { Badge, Button } from '../../ui';
 import type { CustomerKeyState } from './customerKey';
 
-/**
- * The customer decryption-key panel. The picked private key is imported in the
- * browser and held in memory only; this component makes the "never uploaded,
- * never stored" guarantee explicit to the operator.
- */
 export function KeyInput({ keyState }: { keyState: CustomerKeyState }) {
   const id = useId();
   const { key, keyName, keyError, importing, importFromFile, clear } = keyState;

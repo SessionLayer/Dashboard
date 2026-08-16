@@ -22,10 +22,8 @@ const live: SessionLeaseResource = {
   countsTowardCap: true,
 };
 
-// The case the screen exists for: still counted, held by a Gateway that is gone,
-// and the session row it belonged to already pruned — which the contract calls a
-// sign of a stuck lease. Note it is NOT expired: the cap counts unreleased AND
-// unexpired, so an expired lease has already stopped occupying its slot.
+// NOT expired on purpose: the cap counts unreleased AND unexpired, so an
+// expired lease has already stopped occupying its slot.
 const ghost: SessionLeaseResource = {
   id: 'l2',
   identity: 'bob@corp',
@@ -35,7 +33,6 @@ const ghost: SessionLeaseResource = {
   countsTowardCap: true,
 };
 
-// Expired, and therefore already uncounted; `releasedAt` only catches up later.
 const expired: SessionLeaseResource = {
   id: 'l3',
   identity: 'carol@corp',
@@ -46,7 +43,6 @@ const expired: SessionLeaseResource = {
   countsTowardCap: false,
 };
 
-// No TTL at all: counts until something releases it — the unbounded case.
 const noTtl: SessionLeaseResource = {
   id: 'l4',
   identity: 'dave@corp',
@@ -72,14 +68,10 @@ describe('SessionLeaseList', () => {
     mount();
     expect(await screen.findByText('bob@corp')).toBeInTheDocument();
     expect(screen.getByText('yes — no session row')).toBeInTheDocument();
-    // A live lease is counted too, but it is not a fault.
     expect(screen.getByText('yes')).toBeInTheDocument();
     expect(screen.getByText(/session row gone/)).toBeInTheDocument();
   });
 
-  // The cap counts unreleased AND unexpired, so "expired but still counted" is a
-  // state the API cannot report. An indicator built on `expiresAt` would fire on
-  // nothing and quietly imply the wrong diagnosis.
   it('does not treat an expired, uncounted lease as a fault', async () => {
     mount([expired]);
     expect(await screen.findByText('carol@corp')).toBeInTheDocument();
@@ -88,7 +80,6 @@ describe('SessionLeaseList', () => {
       screen.queryByText(/expired, not yet reaped/),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/no session row/)).not.toBeInTheDocument();
-    // Nothing to release: it already stopped occupying its slot.
     expect(
       screen.queryByRole('button', { name: 'Release' }),
     ).not.toBeInTheDocument();
@@ -147,7 +138,6 @@ describe('SessionLeaseList', () => {
     );
 
     const dialog = screen.getByRole('dialog');
-    // No reason yet — the release is not armed.
     expect(
       within(dialog).getByRole('button', { name: 'Release lease' }),
     ).toBeDisabled();

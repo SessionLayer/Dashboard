@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 
 import { ProblemError } from '../api/problem';
 
-/** An accessible busy indicator. */
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
     <span className="spinner" role="status" aria-live="polite">
@@ -57,11 +56,7 @@ function problemMessage(error: unknown): {
   return { title: 'Unexpected error', detail: undefined, status: undefined };
 }
 
-/**
- * Renders an error as an accessible alert. RFC 9457 problem+json is surfaced as
- * title + detail; a `403` reads as an authorization message (the server is the
- * gate). Never dumps raw bodies or secrets.
- */
+/** Never dumps raw bodies or secrets. */
 export function ProblemAlert({ error }: { error: unknown }) {
   const { title, detail, status } = problemMessage(error);
   const forbidden = status === 403;
@@ -77,7 +72,6 @@ export function ProblemAlert({ error }: { error: unknown }) {
   );
 }
 
-/** Inline list wrapper: pending → spinner, error → alert, else children. */
 export function AsyncList({
   isPending,
   isError,

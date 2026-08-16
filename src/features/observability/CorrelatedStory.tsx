@@ -13,9 +13,7 @@ import { useAuditEvents } from './auditHooks';
 import { outcomeTone } from './badges';
 
 /**
- * The "full path" view: given one event, show every event sharing its
- * correlation id in chronological order (approve → connect → run → replay). The
- * search returns newest-first, so it is reversed here into story order.
+ * The search returns newest-first, so it is reversed here into story order.
  */
 export function CorrelatedStory({
   event,
