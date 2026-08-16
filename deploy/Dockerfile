@@ -4,9 +4,6 @@
 # cannot set for itself. TLS is terminated by an upstream proxy, so this listens
 # plain on 8080. Build from the repo root: `docker build -f deploy/Dockerfile .`
 #
-# Bases are pinned by digest; the tag alongside is for readability, the same
-# convention this project uses for GitHub Actions.
-#
 # The serve stage runs no commands, so the arm64 image needs no emulation to
 # build: dist/ is architecture-neutral and everything else is a copy.
 
