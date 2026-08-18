@@ -161,7 +161,7 @@ function ServiceAccountForm({
   );
 }
 
-/** No list endpoint exists — revoke is by id. */
+/** No list endpoint exists - revoke is by id. */
 function CredentialsPanel({ account }: { account: ServiceAccountResource }) {
   const issue = useIssueServiceAccountCredential();
   const revoke = useRevokeServiceAccountCredential();

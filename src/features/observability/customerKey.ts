@@ -4,7 +4,7 @@ import { importCustomerPrivateKey, SlrecError } from '../../crypto/slrec';
 
 /**
  * Read a picked file to bytes with `FileReader` (jsdom's `File` has no
- * `arrayBuffer()`), staying entirely in-browser — the file is never uploaded.
+ * `arrayBuffer()`), staying entirely in-browser - the file is never uploaded.
  */
 function readFileBytes(file: File): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {

@@ -1,7 +1,7 @@
 name: CI
 
 # Contract-first delivery gate for the Control Plane Dashboard. The single job id
-# `gate` is the branch-protection required check — do not rename it or add a
+# `gate` is the branch-protection required check - do not rename it or add a
 # matrix, or auto-merge will hang waiting for a check that never reports.
 on:
   push:

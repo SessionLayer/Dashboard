@@ -6,8 +6,8 @@ import type { WormMode } from '../../api/types';
  *
  * This list is hard-coded on purpose, and deleting it would cost the operator
  * the only actionable half of the message. The API reports *which* fields are
- * pinned and deliberately does not say by what — the owning property is a
- * Control Plane deployment concern and appears only in the 422 detail — but
+ * pinned and deliberately does not say by what - the owning property is a
+ * Control Plane deployment concern and appears only in the 422 detail - but
  * "this field is pinned" without "by this property" leaves nobody able to act.
  * The names were read from the Control Plane's own configuration, not
  * transcribed from elsewhere, and the failure mode if one is ever renamed is

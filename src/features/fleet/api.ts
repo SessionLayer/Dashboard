@@ -146,7 +146,7 @@ export function useGatewayEnrollmentTokens() {
   });
 }
 
-// The raw token lives only in this mutation's in-memory result — it is returned
+// The raw token lives only in this mutation's in-memory result - it is returned
 // exactly once and the list operation never carries it.
 export function useIssueGatewayEnrollmentToken() {
   const qc = useQueryClient();

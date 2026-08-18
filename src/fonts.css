@@ -1,5 +1,5 @@
 /*
- * JetBrains Mono, self-hosted via @fontsource (OFL-1.1) — no external font CDN,
+ * JetBrains Mono, self-hosted via @fontsource (OFL-1.1) - no external font CDN,
  * so the strict CSP (`font-src` unset → defaults to `default-src 'self'`) never
  * needs loosening. Only the latin subset + the three weights the design uses.
  */

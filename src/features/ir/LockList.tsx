@@ -42,7 +42,7 @@ function summarizeTarget(target: LockTarget): ReactNode {
   return parts.length > 0 ? parts.join(' · ') : '—';
 }
 
-// The contract has no standalone "kind" field on a lock — it's derived here
+// The contract has no standalone "kind" field on a lock - it's derived here
 // from which target facet is populated (the same data `summarizeTarget` reads),
 // not invented. A lock can only match one facet family (the create form is
 // exclusive: fleet-wide OR a set of facets), so the first populated facet is

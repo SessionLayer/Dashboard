@@ -108,7 +108,7 @@ function keyReferenceError(
   return undefined;
 }
 
-// DELIBERATELY NOT EXHAUSTIVE — do not "complete" this list against `CaAlgorithm`.
+// DELIBERATELY NOT EXHAUSTIVE - do not "complete" this list against `CaAlgorithm`.
 // The enum is wider than what can be created: it also admits the values a row
 // may already carry from before the CP checked, and only the ECDSA curves can be
 // assembled into a signer. Offering the rest would be offering a 422.
@@ -128,7 +128,7 @@ const ROTATION_TONE: Record<CaRotationState, BadgeTone> = {
   expired: 'fail',
 };
 
-// An active CA's key cannot be changed by an edit — the write is rejected
+// An active CA's key cannot be changed by an edit - the write is rejected
 // (409). Rotate is the only path that changes a key.
 const EDIT_BLOCKED_ON_ACTIVE =
   'This CA is active. Its backend, key reference and algorithm describe its key, and changing them is a rotation, not an edit — use Rotate.';

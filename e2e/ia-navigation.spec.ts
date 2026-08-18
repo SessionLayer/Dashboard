@@ -28,7 +28,7 @@ function testJwt(): string {
 }
 
 // Superset of every list envelope key across all screens (the same trick
-// e2e/smoke.spec.ts uses) — one shared body keeps whichever hook reads it
+// e2e/smoke.spec.ts uses) - one shared body keeps whichever hook reads it
 // happy regardless of which of the ~20 nav destinations actually fired the
 // request, so navigating the whole new IA needs no per-screen precision.
 async function stubControlPlane(page: Page): Promise<void> {

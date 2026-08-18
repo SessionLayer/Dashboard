@@ -24,7 +24,7 @@ import {
 } from './api';
 
 /**
- * A stuck lease is NOT "expired but still counted" — the cap counts leases that
+ * A stuck lease is NOT "expired but still counted" - the cap counts leases that
  * are unreleased AND unexpired, so an expired lease has already stopped
  * occupying its slot and `releasedAt` only tidies the row afterwards. It is a
  * lease that STILL counts with no live session behind it, and settling that

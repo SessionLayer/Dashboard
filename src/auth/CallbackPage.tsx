@@ -6,7 +6,7 @@ import { LoadingState } from '../ui/States';
 import { useAuth } from './AuthContext';
 
 /**
- * Runs exactly once — a ref guards against React StrictMode's double-invoke,
+ * Runs exactly once - a ref guards against React StrictMode's double-invoke,
  * since the code is single-use and the transient is consumed on read.
  */
 export function CallbackPage() {

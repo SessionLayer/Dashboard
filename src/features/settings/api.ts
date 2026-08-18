@@ -34,7 +34,7 @@ export function useUpdateOperatorSettings() {
 
 /**
  * Public key material only. An unprovisioned key is a `200` with
- * `configured: false` — the normal state of a fresh install, not an error.
+ * `configured: false` - the normal state of a fresh install, not an error.
  */
 export function useRecordingCustomerKey() {
   return useQuery({
@@ -50,7 +50,7 @@ export function useRecordingCustomerKey() {
 
 /**
  * A write here also bumps the settings row's version, so both queries are
- * invalidated — leaving the stale version in the form would turn the operator's
+ * invalidated - leaving the stale version in the form would turn the operator's
  * next save into a spurious 409.
  */
 export function useSetRecordingCustomerKey() {

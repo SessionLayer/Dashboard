@@ -1,7 +1,7 @@
 import type { PlatformPermission } from '../api/types';
 
 /**
- * Claims the UI reads from the bearer JWT — for display and for RBAC-aware
+ * Claims the UI reads from the bearer JWT - for display and for RBAC-aware
  * affordances only. The UI is a convenience, NEVER the gate: the Control Plane
  * re-authorizes every mutation server-side (a hidden button is not a security
  * boundary). The signature is therefore intentionally NOT verified here; the CP

@@ -8,7 +8,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     // Generated or produced artifacts are never linted. `src/api/schema.d.ts` is
-    // emitted by `openapi-typescript` and is the contract's shape verbatim —
+    // emitted by `openapi-typescript` and is the contract's shape verbatim -
     // hand-edits would be reverted by the drift check, so linting it is noise.
     ignores: [
       'dist',

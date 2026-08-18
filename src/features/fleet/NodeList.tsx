@@ -59,7 +59,7 @@ export function NodeList() {
     { header: 'Health', cell: (n) => <NodeHealthBadge health={n.health} /> },
     {
       // No heartbeat/liveness telemetry exists in the contract (NodeResource
-      // has no lastSeenAt) — `updatedAt` (last record mutation) is the closest
+      // has no lastSeenAt) - `updatedAt` (last record mutation) is the closest
       // honest proxy for the mockup's "Last seen" column.
       header: 'Last seen',
       cell: (n) => <Time value={n.updatedAt} />,

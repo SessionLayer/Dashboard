@@ -1,7 +1,7 @@
 /**
  * Client-side vetting of a submitted recording customer key.
  *
- * The Control Plane is the authority — it re-runs every one of these checks and
+ * The Control Plane is the authority - it re-runs every one of these checks and
  * answers 422. This module exists so the operator learns *before* submitting
  * that they pasted the wrong half of the key pair: a private key must never
  * leave the machine that generated it, and a UI that forwards it to the server

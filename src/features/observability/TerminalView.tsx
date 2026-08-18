@@ -4,8 +4,8 @@ import type { CellStyle, TerminalSnapshot } from './terminal';
 
 /**
  * Map a cell's style to inline CSS. Every value here is a fixed palette colour or
- * a numerically-derived `rgb(...)` string produced by the emulator — never a
- * string copied from the recording — so this cannot inject arbitrary CSS.
+ * a numerically-derived `rgb(...)` string produced by the emulator - never a
+ * string copied from the recording - so this cannot inject arbitrary CSS.
  */
 function runStyle(s: CellStyle): CSSProperties {
   const style: CSSProperties = {};
@@ -24,8 +24,8 @@ function runStyle(s: CellStyle): CSSProperties {
 }
 
 /**
- * Render the terminal grid. Text is emitted as escaped React children only — no
- * `innerHTML`/`dangerouslySetInnerHTML` anywhere — so recorded output can never
+ * Render the terminal grid. Text is emitted as escaped React children only - no
+ * `innerHTML`/`dangerouslySetInnerHTML` anywhere - so recorded output can never
  * execute or inject markup.
  */
 export function TerminalView({ snapshot }: { snapshot: TerminalSnapshot }) {

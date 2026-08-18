@@ -4,13 +4,13 @@
  *
  * A hand-written array of a union type has no exhaustiveness requirement, so a
  * value added to the contract silently disappears from the control that offers
- * it — and for a permission vocabulary that fails in the worst direction: the
+ * it - and for a permission vocabulary that fails in the worst direction: the
  * server rejects what nobody can select, and everything looks fine. Keying a
  * Record by the union instead makes the omission a compile error.
  */
 
 /**
- * Always pass the union explicitly — `enumOptions<Capability>({…})`. That is what
+ * Always pass the union explicitly - `enumOptions<Capability>({…})`. That is what
  * makes the map exhaustive: let it infer and the union collapses to whatever keys
  * happen to be present, which defeats the point. Key order is the presented order.
  */

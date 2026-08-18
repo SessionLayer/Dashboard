@@ -8,7 +8,7 @@ function readDensity(): Density {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v === 'comfortable' || v === 'dense') return v;
   } catch {
-    /* storage unavailable — fall through to the default */
+    /* storage unavailable - fall through to the default */
   }
   return 'comfortable';
 }
