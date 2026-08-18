@@ -53,7 +53,7 @@ export function ReplayDialog({
     let cancelled = false;
     // The decrypt runs in an async function so state transitions happen off the
     // synchronous effect body. Plaintext stays in this dialog's local state
-    // (cleared on unmount) — never a shared cache.
+    // (cleared on unmount) - never a shared cache.
     const run = async () => {
       setLoading(true);
       setError(undefined);

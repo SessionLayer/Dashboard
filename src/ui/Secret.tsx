@@ -22,7 +22,7 @@ export function CopyButton({
         }, 1500);
       })
       .catch(() => {
-        /* clipboard denied — leave the value visible for manual copy */
+        /* clipboard denied - leave the value visible for manual copy */
       });
   };
   return (

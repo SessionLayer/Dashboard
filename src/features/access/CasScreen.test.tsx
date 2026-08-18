@@ -13,7 +13,7 @@ const ca = (over: Partial<CaResource> = {}): CaResource => ({
   name: 'user-ca',
   caKind: 'user',
   // What cold start provisions, and the only backend whose key reference carries
-  // no rule — so a test about something other than key references is not
+  // no rule - so a test about something other than key references is not
   // silently also a test of one.
   backend: 'local',
   keyReference: 'local-user-ca',

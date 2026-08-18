@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# SessionLayer Dashboard — production image: build the static bundle, then serve
+# SessionLayer Dashboard - production image: build the static bundle, then serve
 # dist/ behind nginx with the strict security headers a client-only bundle
 # cannot set for itself. TLS is terminated by an upstream proxy, so this listens
 # plain on 8080. Build from the repo root: `docker build -f deploy/Dockerfile .`
@@ -17,7 +17,7 @@ WORKDIR /app
 # SL_ALLOW_UNCONFIGURED_BUILD is how a build says it meant to have no endpoints:
 # without it the guard refuses, because the fallback is http://localhost:8080 and
 # a bundle carrying that is one an operator cannot repoint. It is declared with
-# NO default on purpose — an ARG default applies to every build of this file,
+# NO default on purpose - an ARG default applies to every build of this file,
 # including an operator's, which would disable the refusal for exactly the person
 # it is for. Our own image jobs pass it explicitly.
 ARG VITE_CP_BASE_URL
@@ -35,7 +35,7 @@ COPY . .
 RUN npm run build
 
 # Derive the nginx template from the reference header set instead of keeping a
-# second copy of the policy — security-headers.conf stays the one place it is
+# second copy of the policy - security-headers.conf stays the one place it is
 # written, and deploy/headers.test.ts keeps guarding it. Both greps fail the
 # build rather than let a moved placeholder ship a CSP whose connect-src is
 # never substituted.
@@ -68,7 +68,7 @@ ENV NGINX_ENVSUBST_OUTPUT_DIR=/tmp/nginx
 # Space-separated CP + OIDC + object-store origins the SPA is allowed to call.
 # Declared empty so envsubst always has a value to substitute: an undefined
 # variable is left in the rendered file verbatim. Empty collapses connect-src to
-# 'self', which blocks every cross-origin call until an operator sets it — a
+# 'self', which blocks every cross-origin call until an operator sets it - a
 # loud failure, never a silent widening.
 ENV SL_CSP_CONNECT_SRC=""
 

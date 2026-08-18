@@ -3,7 +3,7 @@ openapi/openapi.yaml
 package-lock.json
 
 # The Helm chart is a separate artifact with its own conventions, and its
-# templates are Go templates that only happen to end in .yaml — Prettier parses
+# templates are Go templates that only happen to end in .yaml - Prettier parses
 # `{{- if ... }}` as a block collection inside a flow collection and rejects the
 # file. The rest of the chart is excluded for a different reason: the other three
 # components' charts live in repositories with no Prettier, and reformatting only

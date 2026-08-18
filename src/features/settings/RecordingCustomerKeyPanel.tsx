@@ -226,7 +226,7 @@ function RecordingCustomerKeyDialog({
   }, [check, publicKeyText, sealAlgorithm]);
 
   // Tagged with the input it came from, so a stale result can never stand in for
-  // the current paste — until the check has caught up there is simply no result,
+  // the current paste - until the check has caught up there is simply no result,
   // and submission stays blocked.
   const fresh =
     derived?.publicKeyText === publicKeyText &&

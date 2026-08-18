@@ -155,7 +155,7 @@ describe('OperatorSettingsScreen', () => {
   });
 
   // Omitting a session-limit default CLEARS it, and clearing a pinned field is a
-  // change to a pinned field — a 422 on a control the operator was told they
+  // change to a pinned field - a 422 on a control the operator was told they
   // could not touch. The pinned value must ride along in the body.
   it('still sends a pinned field at its current value', async () => {
     mount({ deploymentManagedFields: ['defaultMaxSessionSeconds'] });

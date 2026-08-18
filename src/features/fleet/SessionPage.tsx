@@ -56,7 +56,7 @@ export function SessionPage() {
   const [access, setAccess] = useState<AccessFilter>('all');
   const [activeOnly, setActiveOnly] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
-  // Snapshot once per mount (not read impurely during render) — a live
+  // Snapshot once per mount (not read impurely during render) - a live
   // session's Duration is a point-in-time label, same convention as `Time`.
   const [now] = useState(() => Date.now());
 

@@ -35,7 +35,7 @@ function isProblemDetails(value: unknown): value is ProblemDetails {
 }
 
 /**
- * `T` may be `undefined` for 204 responses (delete/terminate) — callers treat
+ * `T` may be `undefined` for 204 responses (delete/terminate) - callers treat
  * that as success.
  */
 export function unwrap<T>(result: {

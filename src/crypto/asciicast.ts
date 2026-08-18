@@ -1,5 +1,5 @@
 /**
- * File-transfer audit surfaces as `m` markers — the recorder emits one per
+ * File-transfer audit surfaces as `m` markers - the recorder emits one per
  * SFTP/SCP operation.
  */
 

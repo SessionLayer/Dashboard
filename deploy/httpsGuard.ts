@@ -23,7 +23,7 @@ export function httpsBaseViolations(
   const violations: string[] = [];
 
   // Vite inlines these at build time, and an unset VITE_CP_BASE_URL falls back
-  // to http://localhost:8080 — a loopback value, which the scheme check below
+  // to http://localhost:8080 - a loopback value, which the scheme check below
   // exempts. So an unconfigured production build used to succeed and ship a
   // bundle whose API base is the browser's own machine. That image cannot be
   // repointed afterwards, so the refusal belongs here, at the only moment the
