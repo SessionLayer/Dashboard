@@ -1,0 +1,417 @@
+name: CI
+
+# Contract-first delivery gate for the Control Plane Dashboard. The single job id
+# `gate` is the branch-protection required check - do not rename it or add a
+# matrix, or auto-merge will hang waiting for a check that never reports.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Contract drift check (contracts.lock)
+        run: npm run vendor-contracts:check
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Gate (lint, build, unit, e2e, audit, contract drift)
+        run: npm run gate
+
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Build amd64
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: sessionlayer/dashboard:ci
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+
+      - name: Build arm64
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/arm64
+          outputs: type=cacheonly
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+
+      - name: Assert runtime posture
+        env:
+          IMG: sessionlayer/dashboard:ci
+        run: |
+          set -euo pipefail
+
+          user=$(docker image inspect -f '{{.Config.User}}' "$IMG")
+          case "$user" in
+            '') echo "::error::image declares no USER"; exit 1 ;;
+            root|0|0:0|root:root) echo "::error::image runs as root ($user)"; exit 1 ;;
+          esac
+          echo "USER=$user"
+
+          uid=$(docker run --rm --entrypoint /usr/bin/id "$IMG" -u)
+          if [ "$uid" = 0 ]; then
+            echo "::error::container process runs as uid 0"
+            exit 1
+          fi
+          echo "runtime uid=$uid"
+
+          for label in title description source licenses version revision; do
+            value=$(docker image inspect \
+              -f "{{index .Config.Labels \"org.opencontainers.image.$label\"}}" "$IMG")
+            if [ -z "$value" ] || [ "$value" = '<no value>' ]; then
+              echo "::error::org.opencontainers.image.$label is unset"
+              exit 1
+            fi
+            echo "org.opencontainers.image.$label=$value"
+          done
+
+      - name: One image, two deployments, and a refusal
+        env:
+          IMG: sessionlayer/dashboard:ci
+        run: |
+          set -euo pipefail
+
+          # The whole claim of the runtime-config mechanism: the SAME image,
+          # started twice, serving two different consoles. A unit test cannot
+          # make it, because what is being tested is the container's start.
+          serve() { # name port env...
+            local name=$1 port=$2; shift 2
+            local args=()
+            for kv in "$@"; do args+=(-e "$kv"); done
+            docker run -d --name "$name" -p "$port:8080" \
+              --read-only --tmpfs /tmp:rw,size=16m "${args[@]}" "$IMG" >/dev/null
+            for _ in $(seq 1 60); do
+              curl -fsS -o /dev/null "http://127.0.0.1:$port/" && return 0
+              [ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ] || break
+              sleep 0.5
+            done
+            echo "::error::$name never served a page"
+            docker logs "$name" || true
+            exit 1
+          }
+
+          serve alpha 18081 \
+            SL_CP_BASE_URL=https://cp.alpha.example \
+            SL_OIDC_ISSUER=https://idp.alpha.example \
+            SL_OIDC_CLIENT_ID=dashboard-alpha \
+            SL_OBJECT_STORE_ORIGIN=https://recordings.alpha.example
+          serve beta 18082 \
+            SL_CP_BASE_URL=https://cp.beta.example:8443 \
+            SL_OIDC_ISSUER=https://login.beta.example/realms/sl \
+            SL_OIDC_CLIENT_ID=dashboard-beta \
+            SL_OBJECT_STORE_ORIGIN=https://s3.beta.example
+
+          for host in alpha beta; do
+            port=18081; [ "$host" = beta ] && port=18082
+            echo "::group::$host"
+            curl -fsS "http://127.0.0.1:$port/config.js" | tee "/tmp/$host.js"
+            csp=$(curl -fsSI "http://127.0.0.1:$port/" | tr -d '\r' \
+                  | sed -n 's/^[Cc]ontent-[Ss]ecurity-[Pp]olicy: //p')
+            echo "$csp"
+            echo "::endgroup::"
+
+            grep -q "\"CP_BASE_URL\": \"https://cp.$host.example" "/tmp/$host.js" \
+              || { echo "::error::$host was served the wrong Control Plane"; exit 1; }
+            grep -q "dashboard-$host" "/tmp/$host.js" \
+              || { echo "::error::$host was served the wrong client id"; exit 1; }
+
+            # A runtime endpoint the CSP does not allow is a console that loads
+            # and cannot talk to anything, so assert the header carries them.
+            for origin in $(sed -n 's/.*"\(https:[^"]*\)".*/\1/p' "/tmp/$host.js" \
+                            | sed -E 's|(https://[^/]+).*|\1|' | sort -u); do
+              case "$csp" in
+                *"connect-src"*"$origin"*) ;;
+                *) echo "::error::$host serves $origin but connect-src does not allow it: $csp"; exit 1 ;;
+              esac
+            done
+            case "$csp" in
+              *"'unsafe-inline'"*|*"'unsafe-eval'"*|*"connect-src *"*)
+                echo "::error::$host CSP was weakened: $csp"; exit 1 ;;
+            esac
+          done
+
+          a=$(curl -fsS http://127.0.0.1:18081/config.js)
+          b=$(curl -fsS http://127.0.0.1:18082/config.js)
+          [ "$a" != "$b" ] || { echo "::error::both containers served the same config"; exit 1; }
+          docker rm -f alpha beta >/dev/null
+
+          # The other half: an endpoint the guard rejects must stop the
+          # container, not boot a console pointed somewhere useless.
+          refuses() {
+            local want="$1"; shift
+            local args=() out rc
+            for kv in "$@"; do args+=(-e "$kv"); done
+            set +e
+            out=$(docker run --rm --read-only --tmpfs /tmp:rw,size=16m "${args[@]}" "$IMG" 2>&1); rc=$?
+            set -e
+            [ "$rc" -ne 0 ] || { echo "::error::started despite $want"; printf '%s\n' "$out"; exit 1; }
+            case "$out" in
+              *"$want"*) echo "refused: $want" ;;
+              *) echo "::error::refused, but not on '$want':"; printf '%s\n' "$out"; exit 1 ;;
+            esac
+          }
+          refuses "SL_CP_BASE_URL is unset" SL_NOTHING=1
+          refuses "must be https://" SL_CP_BASE_URL=http://cp.example.com
+          refuses "no effect on a running container" \
+            SL_CP_BASE_URL=https://cp.example.com VITE_CP_BASE_URL=https://cp.example.com
+          refuses "derived from the endpoints" \
+            SL_CP_BASE_URL=https://cp.example.com SL_CSP_CONNECT_SRC=https://x.example
+
+  chart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CHART: deploy/helm/sessionlayer-dashboard
+      HELM_VERSION: 3.19.0
+      HELM_SHA256: a7f81ce08007091b86d8bd696eb4d86b8d0f2e1b9f6c714be62f82f96a594496
+      KUBECONFORM_VERSION: 0.7.0
+      KUBECONFORM_SHA256: c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3
+      KUBE_VERSION: 1.31.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install helm and kubeconform
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+
+          curl -fsSLO "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+          echo "${HELM_SHA256}  helm-v${HELM_VERSION}-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf "helm-v${HELM_VERSION}-linux-amd64.tar.gz" linux-amd64/helm
+          mv linux-amd64/helm "$RUNNER_TEMP/bin/helm"
+
+          curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  kubeconform-linux-amd64.tar.gz" | sha256sum -c -
+          tar -xzf kubeconform-linux-amd64.tar.gz -C "$RUNNER_TEMP/bin" kubeconform
+
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Lint, render and schema-check
+        run: |
+          set -euo pipefail
+          helm lint "$CHART"
+
+          for values in "$CHART"/ci/*.yaml; do
+            name=$(basename "$values" .yaml)
+            echo "::group::$name"
+            helm lint "$CHART" -f "$values"
+
+            out="$RUNNER_TEMP/$name.rendered.yaml"
+            helm template chart-ci "$CHART" -f "$values" > "$out"
+            [ -s "$out" ] || { echo "::error::$name rendered nothing"; exit 1; }
+
+            # A bare exit code cannot tell a clean run from an empty one:
+            # kubeconform exits 0 over zero resources, and a resource whose
+            # schema it never found is 'skipped', not failed.
+            report=$(kubeconform -strict -summary -output json \
+              -schema-location default -kubernetes-version "$KUBE_VERSION" "$out")
+            echo "$report" | jq -c '.summary'
+            echo "$report" | jq -e \
+              '.summary.valid > 0 and .summary.invalid == 0
+               and .summary.errors == 0 and .summary.skipped == 0' >/dev/null
+
+            # A template that silently stops rendering still schema-validates.
+            workloads=$(grep -c '^kind: Deployment$' "$out" || true)
+            [ "$workloads" = 1 ] || { echo "::error::$name rendered $workloads Deployments, expected 1"; exit 1; }
+            repo=$(grep -E '^  repository:' "$values" | head -1 | awk '{print $2}')
+            grep -qE "^          image: ${repo}[@:]" "$out" \
+              || { echo "::error::$name rendered no image reference for $repo"; exit 1; }
+            echo "::endgroup::"
+          done
+
+          # connect-src is derived by the container from these, so the chart
+          # must pass the endpoints through and must never set it by hand.
+          for values in evaluation production; do
+            rendered="$RUNNER_TEMP/$values-values.rendered.yaml"
+            grep -q 'name: SL_CP_BASE_URL' "$rendered" \
+              || { echo "::error::the $values render sets no SL_CP_BASE_URL"; exit 1; }
+            if grep -q 'SL_CSP_CONNECT_SRC' "$rendered"; then
+              echo "::error::the $values render sets SL_CSP_CONNECT_SRC by hand; the container derives it"
+              exit 1
+            fi
+          done
+          grep -q 'name: SL_OBJECT_STORE_ORIGIN' "$RUNNER_TEMP/production-values.rendered.yaml" \
+            || { echo "::error::the production render names no object store origin"; exit 1; }
+          if grep -q 'SL_OBJECT_STORE_ORIGIN' "$RUNNER_TEMP/evaluation-values.rendered.yaml"; then
+            echo "::error::the evaluation render names an object store; an unset one must stay unallowed"
+            exit 1
+          fi
+
+          ref=$(helm template chart-ci "$CHART" -f "$CHART"/ci/evaluation-values.yaml \
+                  --set image.tag=v9.9.9 --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 \
+                | grep -m1 -oE 'image: ghcr\.io/sessionlayer/dashboard[@:][^ ]+')
+          echo "$ref"
+          case "$ref" in
+            *"@sha256:0000000000000000000000000000000000000000000000000000000000000000") ;;
+            *) echo "::error::image.digest did not win over image.tag: $ref"; exit 1 ;;
+          esac
+
+      - name: Assert the chart refuses an install it must refuse
+        run: |
+          set -euo pipefail
+          prod="$CHART/ci/production-values.yaml"
+
+          refuse() {
+            local want="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1); rc=$?
+            set -e
+            if [ "$rc" -eq 0 ]; then
+              echo "::error::expected a refusal naming '$want', but this succeeded: $*"
+              exit 1
+            fi
+            case "$out" in
+              *"$want"*) printf 'refused on %s\n' "$want" ;;
+              *) echo "::error::refused, but not on '$want'. Actual output:"
+                 printf '%s\n' "$out"
+                 exit 1 ;;
+            esac
+          }
+
+          renders() {
+            local why="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1); rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then
+              echo "::error::$why should render, but was refused. A guard that says no to everything passes every refusal assertion above:"
+              printf '%s\n' "$out"
+              exit 1
+            fi
+            printf 'renders as required: %s\n' "$why"
+          }
+
+          refuse "/endpoints/cpBaseUrl" \
+            helm lint "$CHART" -f "$prod" --set endpoints.cpBaseUrl=http://cp.example.com
+          refuse "/endpoints/objectStoreOrigins/0" \
+            helm lint "$CHART" -f "$prod" --set 'endpoints.objectStoreOrigins={http://objects.example.com}'
+
+          refuse "endpoints.cpBaseUrl is required" \
+            helm template chart-ci "$CHART"
+          renders "a loopback Control Plane, the port-forward evaluation" \
+            helm template chart-ci "$CHART" --set endpoints.cpBaseUrl=http://localhost:8080
+          renders "the published image, which now carries no endpoints of its own" \
+            helm template chart-ci "$CHART" --set endpoints.cpBaseUrl=https://cp.example.com
+          # The budget guard, over every input path. --set yields an int64 where a
+          # values file yields a float64 and a percentage yields a string, and a
+          # guard written against one of those is blind to the others.
+          refuse "is not below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=99
+          # Kubernetes rounds a minAvailable percentage UP, so with 3 replicas
+          # the budget is already unsatisfiable at 67%, long before 100%.
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=100%'
+          refuse "leaves no room" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=67%'
+          refuse "neither a pod count nor a percentage" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=abc'
+          refuse "cannot be negative" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=-1
+
+          renders "the largest percentage that still leaves room (66% of 3)" \
+            helm template chart-ci "$CHART" -f "$prod" --set 'podDisruptionBudget.minAvailable=66%'
+          renders "a count below replicaCount" \
+            helm template chart-ci "$CHART" -f "$prod" --set podDisruptionBudget.minAvailable=1
+
+          refuse "/image/digest" \
+            helm lint "$CHART" -f "$prod" --set image.digest=sha256:abc
+          refuse "additional properties" \
+            helm lint "$CHART" -f "$prod" --set replicaCoutn=2
+
+      - name: Assert the chart and the image agree on the runtime uid
+        run: |
+          set -euo pipefail
+          dockerfile=deploy/Dockerfile
+
+          line=$(grep -E '^USER[[:space:]]' "$dockerfile" | tail -1 || true)
+          [ -n "$line" ] || {
+            echo "::error::$dockerfile declares no USER, so the image runs as root and runAsNonRoot has nothing to enforce"
+            exit 1
+          }
+          spec=$(printf '%s' "${line#USER }" | tr -d '[:space:]')
+          img_uid=${spec%%:*}
+          img_gid=${spec#*:}
+          [ "$img_gid" = "$spec" ] && img_gid=""
+
+          case "$img_uid" in
+            ''|*[!0-9]*)
+              echo "::error::$dockerfile has USER $spec, which is not numeric. Kubernetes runAsNonRoot cannot enforce a named user without an /etc/passwd lookup in the image. Make the Dockerfile numeric; do not put the name in the chart."
+              exit 1 ;;
+          esac
+          echo "$dockerfile: USER $spec"
+
+          out="$RUNNER_TEMP/uid-check.yaml"
+          helm template chart-ci "$CHART" -f "$CHART/ci/production-values.yaml" > "$out"
+
+          check() {
+            local field="$1" want="$2" got n
+            got=$(grep -oE "^[[:space:]]*$field:[[:space:]]*[0-9]+" "$out" | grep -oE '[0-9]+$' | sort -u)
+            n=$(printf '%s' "$got" | grep -c . || true)
+            if [ -z "$want" ]; then
+              [ "$n" -eq 0 ] || echo "note: chart sets $field=$(echo $got) and $dockerfile names no group"
+              return 0
+            fi
+            [ "$n" -eq 1 ] || {
+              echo "::error::the render declares $n distinct numeric $field values ($(echo $got)); expected exactly one"
+              exit 1
+            }
+            [ "$got" = "$want" ] || {
+              echo "::error::chart $field is $got but $dockerfile has $spec. runAsUser wins at runtime, so the image's own USER is the one that quietly stops describing what runs."
+              exit 1
+            }
+            echo "chart $field = $got"
+          }
+          check runAsUser "$img_uid"
+          check runAsGroup "$img_gid"
+          check fsGroup "$img_gid"
+
+      - name: helm package
+        run: |
+          set -euo pipefail
+          helm package "$CHART" -d "$RUNNER_TEMP/packaged"
+          ls -l "$RUNNER_TEMP/packaged"

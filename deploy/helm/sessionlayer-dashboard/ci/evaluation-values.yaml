@@ -1,0 +1,10 @@
+image:
+  repository: ghcr.io/sessionlayer/dashboard
+  tag: "v0.0.2"
+
+# The single-instance evaluation: the browser reaches the Control Plane through
+# a port-forward on its own machine, which is the one case http is allowed.
+# Nothing else is set, so connect-src carries only this origin - the render that
+# proves an unnamed object store is not quietly allowed.
+endpoints:
+  cpBaseUrl: "http://localhost:8080"

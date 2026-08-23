@@ -1,0 +1,35 @@
+{{ .Chart.Name }} {{ .Chart.Version }} installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+Image:   {{ include "sessionlayer-dashboard.image" . }}
+{{- if not .Values.image.digest }}
+         Pinned by tag, which names a moving target. Set image.digest.
+{{- end }}
+Service: {{ include "sessionlayer-dashboard.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+
+Control Plane: {{ .Values.endpoints.cpBaseUrl }}
+{{- if not .Values.endpoints.oidcIssuer }}
+No identity provider is set, so the console offers no SSO sign-in. Set
+endpoints.oidcIssuer.
+{{- end }}
+{{- if not .Values.endpoints.objectStoreOrigins }}
+No object store origin is set, so connect-src does not allow one and recording
+replay and export will be blocked by the browser unless the store is served
+from the Control Plane's own origin. Set endpoints.objectStoreOrigins.
+{{- end }}
+
+Point your ingress controller at that Service and terminate TLS there. The
+image sends HSTS on every response, and the bundle's OIDC flow refuses a
+cleartext endpoint, so plain http reaches a login that cannot complete.
+
+The endpoints above are read by the container at start, not baked into the
+image, and the Content-Security-Policy is derived from them in the same pass -
+so `helm upgrade --set endpoints.cpBaseUrl=...` repoints this console without a
+rebuild. A value the container will not accept stops it starting, with the
+reason on stdout:
+
+  kubectl -n {{ .Release.Namespace }} logs deploy/{{ include "sessionlayer-dashboard.fullname" . }}
+{{- if not .Values.networkPolicy.enabled }}
+
+NetworkPolicy is disabled, so egress from this pod is unrestricted. Serving
+static files needs none.
+{{- end }}

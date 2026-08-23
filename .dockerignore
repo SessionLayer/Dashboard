@@ -1,0 +1,16 @@
+# The build stage runs `npm ci` and `npm run build` itself; copying the host's
+# node_modules/ or dist/ over that would substitute whatever the developer
+# happened to have on disk for the lockfile-pinned tree.
+.git
+node_modules
+dist
+coverage
+playwright-report
+test-results
+blob-report
+.playwright
+.vite
+*.log
+*.tgz
+*.cdx.json
+*.sigstore.json
