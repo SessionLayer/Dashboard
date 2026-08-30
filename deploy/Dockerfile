@@ -11,7 +11,7 @@
 # The serve stage runs no commands, so the arm64 image needs no emulation to
 # build: dist/ is architecture-neutral and everything else is a copy.
 
-FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:aadf416b2cdce311a8811ba3f0608a61b77dbf997500e2eafe781b51f6a0b019 AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:2d984a15c9b54fd0aeb608b8e0d0d83529eb34d2966db27a1fb4f1edc3d298a3 AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
